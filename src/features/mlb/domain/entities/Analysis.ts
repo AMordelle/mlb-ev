@@ -1,7 +1,6 @@
-import type { ConfidenceLevel } from "../value-objects/Confidence";
+import type { GameAnalysisInput, GameAnalysisResult } from "../../application/dto/types";
 
-export type Analysis = {
-  gamePk: number;
-  confidence: ConfidenceLevel;
-  recommendation: "OVER" | "UNDER" | "NO_BET";
-};
+export type AnalysisInput = GameAnalysisInput;
+export type AnalysisResult = GameAnalysisResult;
+
+export type Analysis = AnalysisResult;

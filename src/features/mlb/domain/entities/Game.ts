@@ -1,7 +1,3 @@
-export type Game = {
-  gamePk: number;
-  date: string;
-  homeTeam: string;
-  awayTeam: string;
-  status: string;
-};
+import type { GameRecord } from "../../application/dto/types";
+
+export type Game = GameRecord;
