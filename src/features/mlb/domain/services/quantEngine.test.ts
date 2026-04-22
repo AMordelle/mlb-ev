@@ -65,10 +65,10 @@ describe("quant engine core calculations", () => {
     expect(negativeDiff.probOver).toBeLessThan(0.5);
     expect(negativeDiff.probUnder).toBeGreaterThan(0.5);
 
-    expect(clampedHigh.probOver).toBe(0.95);
-    expect(clampedLow.probOver).toBe(0.05);
-    expect(clampedHigh.probUnder).toBe(0.05);
-    expect(clampedLow.probUnder).toBe(0.95);
+    expect(clampedHigh.probOver).toBeCloseTo(0.95, 8);
+    expect(clampedLow.probOver).toBeCloseTo(0.05, 8);
+    expect(clampedHigh.probUnder).toBeCloseTo(0.05, 8);
+    expect(clampedLow.probUnder).toBeCloseTo(0.95, 8);
   });
 
   it("calculateEV returns expected value for valid probability and odds", () => {
