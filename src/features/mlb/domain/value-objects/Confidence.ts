@@ -1,1 +1,3 @@
-export type ConfidenceLevel = "HIGH" | "MEDIUM" | "LOW";
+import type { Confidence } from "../../application/dto/types";
+
+export type ConfidenceLevel = Confidence;

@@ -1,7 +1,4 @@
-import type { ConfidenceLevel } from "../value-objects/Confidence";
+import type { PickRecord, PickRecommendation } from "../../application/dto/types";
 
-export type Pick = {
-  gamePk: number;
-  market: "TOTALS";
-  confidence: ConfidenceLevel;
-};
+export type Pick = PickRecord;
+export type PickDecision = Exclude<PickRecommendation, "NO_BET">;
