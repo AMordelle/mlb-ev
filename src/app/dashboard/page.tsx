@@ -5,8 +5,8 @@ import { useMemo, useState } from "react";
 import { OpportunityTable } from "@/components/picks/OpportunityTable";
 import { PickCard } from "@/components/picks/PickCard";
 import { RiskPanel } from "@/components/picks/RiskPanel";
-import { analyzeTodayGames } from "@/features/mlb/application/use-cases/analyzeTodayGames";
 import type { Confidence, DailyScanResult, GameAnalysisInput } from "@/features/mlb/application/dto/types";
+import { analyzeTodayGames } from "@/features/mlb/application/use-cases/analyzeTodayGames";
 
 type GameInputFormRow = {
   gameId: string;
@@ -103,91 +103,157 @@ export default function DashboardPage() {
   }
 
   return (
-    <main>
+    <main className="dashboard-page" style={{ maxWidth: 1100, margin: "0 auto", padding: "1rem" }}>
       <h1>MLB EV+ Manual Dashboard</h1>
       <p>Enter up to 3 games, run analysis, and inspect the EV+ scan output.</p>
 
-      <section>
+      <section className="scan-inputs" style={{ marginTop: "1rem" }}>
         <h2>Scan inputs</h2>
-        <label htmlFor="scan-date">Date</label>
-        <input id="scan-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+        <p style={{ marginBottom: "1rem" }}>
+          <strong>Field help:</strong> R/G = runs per game. ERA = pitcher earned run average. Total Line = market
+          total (e.g. 8.5). Over Odds / Under Odds = decimal odds.
+        </p>
+
+        <div style={{ marginBottom: "1rem" }}>
+          <label htmlFor="scan-date">Date</label>
+          <br />
+          <input id="scan-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+        </div>
 
         {rowIndexes.map((index) => {
           const row = rows[index];
 
           return (
-            <fieldset key={index}>
-              <legend>Game {index + 1}</legend>
-              <input
-                placeholder="gameId"
-                value={row.gameId}
-                onChange={(event) => updateRow(index, { gameId: event.target.value })}
-              />
-              <input
-                placeholder="homeRG"
-                value={row.homeRG}
-                onChange={(event) => updateRow(index, { homeRG: event.target.value })}
-              />
-              <input
-                placeholder="awayRG"
-                value={row.awayRG}
-                onChange={(event) => updateRow(index, { awayRG: event.target.value })}
-              />
-              <input
-                placeholder="homePitcher"
-                value={row.homePitcher}
-                onChange={(event) => updateRow(index, { homePitcher: event.target.value })}
-              />
-              <input
-                placeholder="awayPitcher"
-                value={row.awayPitcher}
-                onChange={(event) => updateRow(index, { awayPitcher: event.target.value })}
-              />
-              <input
-                placeholder="homeERA"
-                value={row.homeERA}
-                onChange={(event) => updateRow(index, { homeERA: event.target.value })}
-              />
-              <input
-                placeholder="awayERA"
-                value={row.awayERA}
-                onChange={(event) => updateRow(index, { awayERA: event.target.value })}
-              />
-              <input
-                placeholder="lineTotal"
-                value={row.lineTotal}
-                onChange={(event) => updateRow(index, { lineTotal: event.target.value })}
-              />
-              <input
-                placeholder="overOdds"
-                value={row.overOdds}
-                onChange={(event) => updateRow(index, { overOdds: event.target.value })}
-              />
-              <input
-                placeholder="underOdds"
-                value={row.underOdds}
-                onChange={(event) => updateRow(index, { underOdds: event.target.value })}
-              />
-              <select
-                value={row.dataConfidence}
-                onChange={(event) => updateRow(index, { dataConfidence: event.target.value as Confidence })}
+            <fieldset
+              key={index}
+              style={{ border: "1px solid #d1d5db", borderRadius: 8, padding: "1rem", marginBottom: "1rem" }}
+            >
+              <legend>
+                <strong>Game {index + 1}</strong>
+              </legend>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gap: "0.75rem",
+                }}
               >
-                <option value="HIGH">HIGH</option>
-                <option value="MEDIUM">MEDIUM</option>
-                <option value="LOW">LOW</option>
-              </select>
+                <label htmlFor={`gameId-${index}`}>
+                  Game ID
+                  <input
+                    id={`gameId-${index}`}
+                    value={row.gameId}
+                    onChange={(event) => updateRow(index, { gameId: event.target.value })}
+                  />
+                </label>
+
+                <label htmlFor={`homeRG-${index}`}>
+                  Home R/G
+                  <input
+                    id={`homeRG-${index}`}
+                    value={row.homeRG}
+                    onChange={(event) => updateRow(index, { homeRG: event.target.value })}
+                  />
+                </label>
+
+                <label htmlFor={`awayRG-${index}`}>
+                  Away R/G
+                  <input
+                    id={`awayRG-${index}`}
+                    value={row.awayRG}
+                    onChange={(event) => updateRow(index, { awayRG: event.target.value })}
+                  />
+                </label>
+
+                <label htmlFor={`homePitcher-${index}`}>
+                  Home Pitcher
+                  <input
+                    id={`homePitcher-${index}`}
+                    value={row.homePitcher}
+                    onChange={(event) => updateRow(index, { homePitcher: event.target.value })}
+                  />
+                </label>
+
+                <label htmlFor={`awayPitcher-${index}`}>
+                  Away Pitcher
+                  <input
+                    id={`awayPitcher-${index}`}
+                    value={row.awayPitcher}
+                    onChange={(event) => updateRow(index, { awayPitcher: event.target.value })}
+                  />
+                </label>
+
+                <label htmlFor={`homeERA-${index}`}>
+                  Home ERA
+                  <input
+                    id={`homeERA-${index}`}
+                    value={row.homeERA}
+                    onChange={(event) => updateRow(index, { homeERA: event.target.value })}
+                  />
+                </label>
+
+                <label htmlFor={`awayERA-${index}`}>
+                  Away ERA
+                  <input
+                    id={`awayERA-${index}`}
+                    value={row.awayERA}
+                    onChange={(event) => updateRow(index, { awayERA: event.target.value })}
+                  />
+                </label>
+
+                <label htmlFor={`lineTotal-${index}`}>
+                  Total Line
+                  <input
+                    id={`lineTotal-${index}`}
+                    value={row.lineTotal}
+                    onChange={(event) => updateRow(index, { lineTotal: event.target.value })}
+                  />
+                </label>
+
+                <label htmlFor={`overOdds-${index}`}>
+                  Over Odds
+                  <input
+                    id={`overOdds-${index}`}
+                    value={row.overOdds}
+                    onChange={(event) => updateRow(index, { overOdds: event.target.value })}
+                  />
+                </label>
+
+                <label htmlFor={`underOdds-${index}`}>
+                  Under Odds
+                  <input
+                    id={`underOdds-${index}`}
+                    value={row.underOdds}
+                    onChange={(event) => updateRow(index, { underOdds: event.target.value })}
+                  />
+                </label>
+
+                <label htmlFor={`dataConfidence-${index}`}>
+                  Data Confidence
+                  <select
+                    id={`dataConfidence-${index}`}
+                    value={row.dataConfidence}
+                    onChange={(event) => updateRow(index, { dataConfidence: event.target.value as Confidence })}
+                  >
+                    <option value="HIGH">HIGH</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="LOW">LOW</option>
+                  </select>
+                </label>
+              </div>
             </fieldset>
           );
         })}
 
-        <button type="button" onClick={handleAnalyze}>
+        <button type="button" onClick={handleAnalyze} style={{ padding: "0.6rem 1rem", fontWeight: 600 }}>
           Analyze
         </button>
       </section>
 
       {result ? (
         <>
-          <section>
+          <section style={{ marginTop: "1.5rem" }}>
             <h2>Summary</h2>
             <ul>
               <li>

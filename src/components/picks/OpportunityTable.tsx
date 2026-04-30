@@ -6,22 +6,22 @@ type OpportunityTableProps = {
 
 export function OpportunityTable({ opportunities }: OpportunityTableProps) {
   return (
-    <section>
+    <section style={{ marginTop: "1.5rem" }}>
       <h2>Top opportunities</h2>
       {opportunities.length === 0 ? (
         <p>No opportunities available.</p>
       ) : (
-        <table>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
-              <th>gameId</th>
-              <th>recommendation</th>
-              <th>expectedTotal</th>
-              <th>probOver</th>
-              <th>probUnder</th>
-              <th>evOver</th>
-              <th>evUnder</th>
-              <th>confidence</th>
+              <th align="left">Game ID</th>
+              <th align="left">Recommendation</th>
+              <th align="left">Expected Total</th>
+              <th align="left">Prob Over</th>
+              <th align="left">Prob Under</th>
+              <th align="left">EV Over</th>
+              <th align="left">EV Under</th>
+              <th align="left">Confidence</th>
             </tr>
           </thead>
           <tbody>

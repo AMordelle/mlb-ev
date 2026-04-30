@@ -4,7 +4,7 @@ type RiskPanelProps = {
 
 export function RiskPanel({ risks }: RiskPanelProps) {
   return (
-    <section>
+    <section style={{ marginTop: "1.5rem", marginBottom: "2rem" }}>
       <h2>Risks</h2>
       {risks.length === 0 ? (
         <p>No risks reported.</p>
