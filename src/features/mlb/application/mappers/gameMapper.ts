@@ -14,6 +14,18 @@ export type GameRow = {
   updated_at: string;
 };
 
+export type GameWriteRow = {
+  id?: string;
+  game_pk: number;
+  game_date: string;
+  official_datetime: string | null;
+  home_team: string;
+  away_team: string;
+  venue: string | null;
+  status: string;
+  season: number | null;
+};
+
 export function mapGameRowToRecord(row: GameRow): GameRecord {
   return {
     id: row.id,
@@ -27,5 +39,19 @@ export function mapGameRowToRecord(row: GameRow): GameRecord {
     season: row.season,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+export function mapGameRecordToWriteRow(record: GameRecord): GameWriteRow {
+  return {
+    id: record.id,
+    game_pk: record.gamePk,
+    game_date: record.gameDate,
+    official_datetime: record.officialDatetime,
+    home_team: record.homeTeam,
+    away_team: record.awayTeam,
+    venue: record.venue,
+    status: record.status,
+    season: record.season,
   };
 }
