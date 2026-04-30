@@ -14,8 +14,8 @@ export type GameRecord = {
   venue: string | null;
   status: string;
   season: number | null;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type GameAnalysisInput = {

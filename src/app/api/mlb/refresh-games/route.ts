@@ -1,5 +1,48 @@
 import { NextResponse } from "next/server";
 
-export async function POST() {
-  return NextResponse.json({ ok: true, message: "Refresh games placeholder" });
+import { enrichDailyGames } from "@/features/mlb/application/use-cases/enrichDailyGames";
+import { gamesRepository } from "@/features/mlb/infrastructure/repositories/gamesRepository";
+import { todayISO } from "@/lib/utils/dates";
+
+type RefreshGamesBody = {
+  date?: string;
+};
+
+function getDateFromBody(body: unknown): string {
+  if (!body || typeof body !== "object") {
+    return todayISO();
+  }
+
+  const { date } = body as RefreshGamesBody;
+  if (typeof date !== "string" || date.trim().length === 0) {
+    return todayISO();
+  }
+
+  return date;
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const date = getDateFromBody(body);
+
+    const normalizedGames = await enrichDailyGames({ date });
+    const games = await gamesRepository.upsertGames(normalizedGames);
+
+    return NextResponse.json({
+      ok: true,
+      date,
+      count: games.length,
+      games,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `Failed to refresh MLB games: ${message}`,
+      },
+      { status: 500 },
+    );
+  }
 }

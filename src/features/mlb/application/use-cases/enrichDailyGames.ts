@@ -1,12 +1,10 @@
-import type { GameAnalysisInput } from "../dto/types";
+import type { GameRecord } from "../dto/types";
+import { scheduleProvider } from "../../infrastructure/providers/scheduleProvider";
 
 type EnrichDailyGamesParams = {
   date: string;
-  gameInputs: GameAnalysisInput[];
 };
 
-export function enrichDailyGames({ date, gameInputs }: EnrichDailyGamesParams): GameAnalysisInput[] {
-  void date;
-
-  return gameInputs;
+export async function enrichDailyGames({ date }: EnrichDailyGamesParams): Promise<GameRecord[]> {
+  return scheduleProvider(date);
 }
