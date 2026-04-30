@@ -75,6 +75,18 @@ export type PickRecord = {
   updatedAt?: string;
 };
 
+
+export type SettingsRecord = {
+  id?: string;
+  bankroll: number;
+  stakeBasePct: number;
+  evThreshold: number;
+  maxDailyPicks: number;
+  market: "TOTALS";
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type ResultRecord = {
   id?: string;
   gameId: string;

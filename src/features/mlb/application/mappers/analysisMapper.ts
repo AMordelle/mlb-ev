@@ -81,3 +81,24 @@ export function mapAnalysisResultRowToRecord(row: AnalysisResultRow): GameAnalys
     updatedAt: row.updated_at,
   };
 }
+
+export function mapAnalysisResultToWriteRow(result: GameAnalysisResult): AnalysisResultRow {
+  return {
+    id: result.id,
+    game_id: result.gameId,
+    expected_runs_home: result.expectedRunsHome,
+    expected_runs_away: result.expectedRunsAway,
+    expected_total: result.expectedTotal,
+    prob_over: result.probOver,
+    prob_under: result.probUnder,
+    implied_prob_over: result.impliedProbOver,
+    implied_prob_under: result.impliedProbUnder,
+    ev_over: result.evOver,
+    ev_under: result.evUnder,
+    confidence: result.confidence,
+    recommendation: result.recommendation,
+    recommended_line: result.recommendedLine,
+    recommended_odds: result.recommendedOdds,
+    reason: result.reason,
+  };
+}
