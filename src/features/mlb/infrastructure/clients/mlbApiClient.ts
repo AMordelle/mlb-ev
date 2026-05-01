@@ -1,5 +1,6 @@
 const MLB_SCHEDULE_BASE_URL = "https://statsapi.mlb.com/api/v1/schedule";
 const MLB_PEOPLE_BASE_URL = "https://statsapi.mlb.com/api/v1/people";
+const MLB_TEAMS_BASE_URL = "https://statsapi.mlb.com/api/v1/teams";
 
 type MlbApiProbablePitcher = {
   id?: number;
@@ -55,6 +56,27 @@ type MlbPitcherStatsResponse = {
   stats?: MlbPitcherStatsEntry[];
 };
 
+type MlbTeamHittingStat = {
+  runs?: string;
+  gamesPlayed?: number;
+};
+
+type MlbTeamStatsSplit = {
+  team?: {
+    id?: number;
+    name?: string;
+  };
+  stat?: MlbTeamHittingStat;
+};
+
+type MlbTeamStatsEntry = {
+  splits?: MlbTeamStatsSplit[];
+};
+
+type MlbTeamStatsResponse = {
+  stats?: MlbTeamStatsEntry[];
+};
+
 export type MlbProbablePitcher = {
   id: number;
   fullName: string;
@@ -64,6 +86,14 @@ export type MlbPitcherSeasonStats = {
   pitcherId: number;
   season: number;
   era: number | null;
+};
+
+export type MlbTeamSeasonHittingStats = {
+  teamId: number;
+  teamName: string;
+  season: number;
+  runs: number | null;
+  gamesPlayed: number | null;
 };
 
 export type MlbScheduleGame = {
@@ -102,6 +132,15 @@ function parseEra(value: string | undefined): number | null {
   }
 
   const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseInteger(value: string | undefined): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
@@ -189,5 +228,42 @@ export const mlbApiClient = {
       season,
       era,
     };
+  },
+
+  async getTeamSeasonHittingStats(season: number): Promise<MlbTeamSeasonHittingStats[]> {
+    const url = `${MLB_TEAMS_BASE_URL}/stats?stats=season&group=hitting&season=${season}`;
+
+    let response: Response;
+
+    try {
+      response = await fetch(url, { method: "GET", cache: "no-store" });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown network error";
+      throw new Error(`mlbApiClient.getTeamSeasonHittingStats network error for season ${season}: ${message}`);
+    }
+
+    if (!response.ok) {
+      throw new Error(`mlbApiClient.getTeamSeasonHittingStats failed for season ${season}: HTTP ${response.status} ${response.statusText}`);
+    }
+
+    let payload: MlbTeamStatsResponse;
+    try {
+      payload = (await response.json()) as MlbTeamStatsResponse;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invalid JSON response";
+      throw new Error(`mlbApiClient.getTeamSeasonHittingStats parse error for season ${season}: ${message}`);
+    }
+
+    return (payload.stats?.[0]?.splits ?? [])
+      .filter((split): split is MlbTeamStatsSplit & { team: { id: number; name: string } } => {
+        return typeof split.team?.id === "number" && typeof split.team?.name === "string";
+      })
+      .map((split) => ({
+        teamId: split.team.id,
+        teamName: split.team.name,
+        season,
+        runs: parseInteger(split.stat?.runs),
+        gamesPlayed: typeof split.stat?.gamesPlayed === "number" ? split.stat.gamesPlayed : null,
+      }));
   },
 };
