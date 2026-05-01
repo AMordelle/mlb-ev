@@ -62,6 +62,32 @@ describe("mlbApiClient", () => {
     expect(stats.era).toBe(3.45);
   });
 
+
+  it("calls MLB people stats endpoint with pitcher id and season", async () => {
+    const fetchMock = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ stats: [{ splits: [{ stat: { era: "4.12" } }] }] }),
+    } as Response);
+
+    await mlbApiClient.getPitcherSeasonStats(42, 2026);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://statsapi.mlb.com/api/v1/people/42/stats?stats=season&group=pitching&season=2026",
+      { method: "GET", cache: "no-store" },
+    );
+  });
+
+  it("returns null ERA when the ERA value is invalid", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ stats: [{ splits: [{ stat: { era: "N/A" } }] }] }),
+    } as Response);
+
+    const stats = await mlbApiClient.getPitcherSeasonStats(10, 2026);
+
+    expect(stats.era).toBeNull();
+  });
+
   it("returns null ERA when pitcher stats are missing", async () => {
     vi.spyOn(global, "fetch").mockResolvedValue({
       ok: true,
