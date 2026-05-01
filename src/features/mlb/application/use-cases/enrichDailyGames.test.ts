@@ -28,20 +28,43 @@ import { mlbApiClient } from "../../infrastructure/clients/mlbApiClient";
 describe("enrichDailyGames", () => {
   it("attaches home and away runs per game", async () => {
     vi.mocked(scheduleProvider).mockResolvedValue([
-      { gamePk: 100, gameDate: "2026-04-01", officialDatetime: null, homeTeam: "Home", awayTeam: "Away", venue: null, status: "Scheduled", season: 2026 },
+      { gamePk: 100, gameDate: "2026-04-01", officialDatetime: null, homeTeam: "Home", awayTeam: "Away", homeTeamId: 1, awayTeamId: 2, venue: null, status: "Scheduled", season: 2026 },
     ]);
     vi.mocked(mlbApiClient.getSchedule).mockResolvedValue([
-      { gamePk: 100, officialDate: "2026-04-01", gameDateTime: null, homeTeam: "Home", awayTeam: "Away", venue: null, status: "Scheduled", season: 2026, homeProbablePitcher: null, awayProbablePitcher: null },
+      {
+        gamePk: 100, officialDate: "2026-04-01", gameDateTime: null, homeTeam: "Home", awayTeam: "Away", homeTeamId: 1, awayTeamId: 2,
+        venue: null, status: "Scheduled", season: 2026, homeProbablePitcher: null, awayProbablePitcher: null,
+      },
     ]);
     vi.mocked(pitcherStatsProvider).mockResolvedValue({ pitcherId: 0, pitcherName: "Unknown", era: null });
     vi.mocked(teamStatsProvider).mockResolvedValue(new Map([
-      ["Home", { teamId: 1, teamName: "Home", runs: 120, gamesPlayed: 30, runsPerGame: 4 }],
-      ["Away", { teamId: 2, teamName: "Away", runs: 100, gamesPlayed: 25, runsPerGame: 4 }],
+      [1, { teamId: 1, teamName: "Home", runs: 120, gamesPlayed: 30, runsPerGame: 4 }],
+      [2, { teamId: 2, teamName: "Away", runs: 100, gamesPlayed: 25, runsPerGame: 4 }],
     ]));
 
     const enriched = await enrichDailyGames({ date: "2026-04-01" });
 
     expect(enriched[0]?.homeRunsPerGame).toBe(4);
     expect(enriched[0]?.awayRunsPerGame).toBe(4);
+  });
+
+  it("returns null runs per game when team ids are missing", async () => {
+    vi.mocked(scheduleProvider).mockResolvedValue([
+      { gamePk: 101, gameDate: "2026-04-01", officialDatetime: null, homeTeam: "Home", awayTeam: "Away", homeTeamId: null, awayTeamId: null, venue: null, status: "Scheduled", season: 2026 },
+    ]);
+    vi.mocked(mlbApiClient.getSchedule).mockResolvedValue([
+      {
+        gamePk: 101, officialDate: "2026-04-01", gameDateTime: null, homeTeam: "Home", awayTeam: "Away", homeTeamId: null, awayTeamId: null,
+        venue: null, status: "Scheduled", season: 2026, homeProbablePitcher: null, awayProbablePitcher: null,
+      },
+    ]);
+    vi.mocked(teamStatsProvider).mockResolvedValue(new Map([
+      [1, { teamId: 1, teamName: "Home", runs: 120, gamesPlayed: 30, runsPerGame: 4 }],
+    ]));
+
+    const enriched = await enrichDailyGames({ date: "2026-04-01" });
+
+    expect(enriched[0]?.homeRunsPerGame).toBeNull();
+    expect(enriched[0]?.awayRunsPerGame).toBeNull();
   });
 });

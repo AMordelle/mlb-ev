@@ -25,6 +25,8 @@ export type GameUpsertInput = {
   officialDatetime: string | null;
   homeTeam: string;
   awayTeam: string;
+  homeTeamId: number | null;
+  awayTeamId: number | null;
   venue: string | null;
   status: string;
   season: number | null;
@@ -56,6 +58,8 @@ export type EnrichedGame = {
   gameDate: string;
   homeTeam: string;
   awayTeam: string;
+  homeTeamId: number | null;
+  awayTeamId: number | null;
   venue: string | null;
   status: string;
   season: number | null;

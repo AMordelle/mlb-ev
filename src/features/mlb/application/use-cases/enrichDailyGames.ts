@@ -13,7 +13,7 @@ export async function enrichDailyGames({ date }: EnrichDailyGamesParams): Promis
   const baseGames = await scheduleProvider(date);
   const scheduleGames = await mlbApiClient.getSchedule(date);
   const scheduleByGamePk = new Map(scheduleGames.map((game) => [game.gamePk, game]));
-  const teamStatsByName = await teamStatsProvider(baseGames).catch(() => new Map());
+  const teamStatsById = await teamStatsProvider(baseGames).catch(() => new Map());
 
   return Promise.all(
     baseGames.map(async (game) => {
@@ -25,14 +25,16 @@ export async function enrichDailyGames({ date }: EnrichDailyGamesParams): Promis
         homeProbablePitcher ? pitcherStatsProvider(homeProbablePitcher, game.season) : Promise.resolve(null),
         awayProbablePitcher ? pitcherStatsProvider(awayProbablePitcher, game.season) : Promise.resolve(null),
       ]);
-      const homeRunsPerGame = teamStatsByName.get(game.homeTeam)?.runsPerGame ?? null;
-      const awayRunsPerGame = teamStatsByName.get(game.awayTeam)?.runsPerGame ?? null;
+      const homeRunsPerGame = game.homeTeamId === null ? null : teamStatsById.get(game.homeTeamId)?.runsPerGame ?? null;
+      const awayRunsPerGame = game.awayTeamId === null ? null : teamStatsById.get(game.awayTeamId)?.runsPerGame ?? null;
 
       return {
         gamePk: game.gamePk,
         gameDate: game.gameDate,
         homeTeam: game.homeTeam,
         awayTeam: game.awayTeam,
+        homeTeamId: game.homeTeamId,
+        awayTeamId: game.awayTeamId,
         venue: game.venue,
         status: game.status,
         season: game.season,

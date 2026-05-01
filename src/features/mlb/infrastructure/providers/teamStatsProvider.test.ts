@@ -11,11 +11,11 @@ describe("teamStatsProvider", () => {
     ]);
 
     const result = await teamStatsProvider([
-      { gamePk: 1, gameDate: "2026-04-01", officialDatetime: null, homeTeam: "Home", awayTeam: "Away", venue: null, status: "Scheduled", season: 2026 },
+      { gamePk: 1, gameDate: "2026-04-01", officialDatetime: null, homeTeam: "Home", awayTeam: "Away", homeTeamId: 1, awayTeamId: 2, venue: null, status: "Scheduled", season: 2026 },
     ]);
 
-    expect(result.get("Home")?.runsPerGame).toBe(4);
-    expect(result.get("Away")?.runsPerGame).toBe(4);
+    expect(result.get(1)?.runsPerGame).toBe(4);
+    expect(result.get(2)?.runsPerGame).toBe(4);
   });
 
   it("returns null runsPerGame when runs are missing", async () => {
@@ -24,10 +24,10 @@ describe("teamStatsProvider", () => {
     ]);
 
     const result = await teamStatsProvider([
-      { gamePk: 1, gameDate: "2026-04-01", officialDatetime: null, homeTeam: "Home", awayTeam: "Away", venue: null, status: "Scheduled", season: 2026 },
+      { gamePk: 1, gameDate: "2026-04-01", officialDatetime: null, homeTeam: "Home", awayTeam: "Away", homeTeamId: 1, awayTeamId: 2, venue: null, status: "Scheduled", season: 2026 },
     ]);
 
-    expect(result.get("Home")?.runsPerGame).toBeNull();
+    expect(result.get(1)?.runsPerGame).toBeNull();
   });
 
   it("returns null runsPerGame when games played are zero", async () => {
@@ -36,9 +36,9 @@ describe("teamStatsProvider", () => {
     ]);
 
     const result = await teamStatsProvider([
-      { gamePk: 1, gameDate: "2026-04-01", officialDatetime: null, homeTeam: "Home", awayTeam: "Away", venue: null, status: "Scheduled", season: 2026 },
+      { gamePk: 1, gameDate: "2026-04-01", officialDatetime: null, homeTeam: "Home", awayTeam: "Away", homeTeamId: 1, awayTeamId: 2, venue: null, status: "Scheduled", season: 2026 },
     ]);
 
-    expect(result.get("Home")?.runsPerGame).toBeNull();
+    expect(result.get(1)?.runsPerGame).toBeNull();
   });
 });
