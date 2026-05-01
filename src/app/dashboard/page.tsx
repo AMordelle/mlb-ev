@@ -10,6 +10,7 @@ import type {
   DailyScanResult,
   EnrichedGame,
   EnrichedGameRunProjection,
+  GameAnalysis,
   GameOdds,
   GameAnalysisInput,
   GameRecord,
@@ -39,6 +40,7 @@ type RefreshGamesSuccess = {
   enrichedGames: EnrichedGame[];
   runProjections: EnrichedGameRunProjection[];
   odds: Record<string, GameOdds>;
+  analysis: GameAnalysis[];
 };
 
 type RefreshGamesError = {
@@ -99,6 +101,14 @@ function formatNullableValue(value: number | string | null): string | number {
 
 function formatProjectionValue(value: number | null): string {
   return value === null ? "-" : value.toFixed(3);
+}
+
+function formatProbabilityValue(value: number | null): string {
+  return value === null ? "-" : value.toFixed(3);
+}
+
+function formatEvValue(value: number | null): string {
+  return value === null ? "-" : value.toFixed(4);
 }
 
 type OddsRow = {
@@ -372,6 +382,54 @@ export default function DashboardPage() {
                         <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatNullableValue(oddsRow.overOdds)}</td>
                         <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatNullableValue(oddsRow.underOdds)}</td>
                         <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{oddsRow.sportsbook}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <h3 style={{ marginTop: "1rem" }}>Game Analysis</h3>
+            {!refreshResult.analysis || refreshResult.analysis.length === 0 ? (
+              <p>No analysis available</p>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>gamePk</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>matchup</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>lineTotal</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>odds</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>totalExpectedRuns</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>overProbability</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>underProbability</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>overEV</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>underEV</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>valid</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {refreshResult.analysis.map((item) => (
+                      <tr key={item.gamePk}>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{item.gamePk}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>
+                          {item.awayTeam} @ {item.homeTeam}
+                        </td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatNullableValue(item.lineTotal)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>
+                          Over {formatNullableValue(item.overOdds)} / Under {formatNullableValue(item.underOdds)}
+                        </td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>
+                          {formatNullableValue(item.totalExpectedRuns)}
+                        </td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatProbabilityValue(item.overProbability)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatProbabilityValue(item.underProbability)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatEvValue(item.overEV)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatEvValue(item.underEV)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{item.valid ? "Yes" : "No"}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{item.reason}</td>
                       </tr>
                     ))}
                   </tbody>
