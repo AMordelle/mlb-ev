@@ -2,7 +2,7 @@ import { scheduleProvider } from "../../infrastructure/providers/scheduleProvide
 import { pitcherStatsProvider } from "../../infrastructure/providers/pitcherStatsProvider";
 import { teamStatsProvider } from "../../infrastructure/providers/teamStatsProvider";
 import { mlbApiClient } from "../../infrastructure/clients/mlbApiClient";
-import type { EnrichedGame, EnrichedGameRunProjection, GameAnalysisInput } from "../dto/types";
+import type { EnrichedGame, EnrichedGameRunProjection, GameAnalysisInput, PitcherStatLine } from "../dto/types";
 import { buildAnalysisInputsFromEnrichedGames as buildAnalysisInputs } from "../mappers/enrichedGameMapper";
 import { buildRunProjectionsFromEnrichedGames as buildRunProjections } from "../mappers/runProjectionMapper";
 
@@ -15,6 +15,7 @@ export async function enrichDailyGames({ date }: EnrichDailyGamesParams): Promis
   const scheduleGames = await mlbApiClient.getSchedule(date);
   const scheduleByGamePk = new Map(scheduleGames.map((game) => [game.gamePk, game]));
   const teamStatsById = await teamStatsProvider(baseGames).catch(() => new Map());
+  const pitcherEraRequestCache = new Map<string, Promise<PitcherStatLine>>();
 
   return Promise.all(
     baseGames.map(async (game) => {
@@ -22,10 +23,20 @@ export async function enrichDailyGames({ date }: EnrichDailyGamesParams): Promis
       const homeProbablePitcher = scheduleGame?.homeProbablePitcher ?? null;
       const awayProbablePitcher = scheduleGame?.awayProbablePitcher ?? null;
 
-      const [homePitcherStats, awayPitcherStats] = await Promise.all([
-        homeProbablePitcher ? pitcherStatsProvider(homeProbablePitcher, game.season) : Promise.resolve(null),
-        awayProbablePitcher ? pitcherStatsProvider(awayProbablePitcher, game.season) : Promise.resolve(null),
-      ]);
+      const getPitcherStats = (pitcher: typeof homeProbablePitcher) => {
+        if (!pitcher) return Promise.resolve(null);
+        const cacheKey = `${pitcher.id}:${game.season ?? "null"}`;
+        const cached = pitcherEraRequestCache.get(cacheKey);
+        if (cached) {
+          return cached;
+        }
+
+        const pending = pitcherStatsProvider(pitcher, game.season);
+        pitcherEraRequestCache.set(cacheKey, pending);
+        return pending;
+      };
+
+      const [homePitcherStats, awayPitcherStats] = await Promise.all([getPitcherStats(homeProbablePitcher), getPitcherStats(awayProbablePitcher)]);
       const homeRunsPerGame = game.homeTeamId === null ? null : teamStatsById.get(game.homeTeamId)?.runsPerGame ?? null;
       const awayRunsPerGame = game.awayTeamId === null ? null : teamStatsById.get(game.awayTeamId)?.runsPerGame ?? null;
 
