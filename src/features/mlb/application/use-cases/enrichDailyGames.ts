@@ -2,8 +2,9 @@ import { scheduleProvider } from "../../infrastructure/providers/scheduleProvide
 import { pitcherStatsProvider } from "../../infrastructure/providers/pitcherStatsProvider";
 import { teamStatsProvider } from "../../infrastructure/providers/teamStatsProvider";
 import { mlbApiClient } from "../../infrastructure/clients/mlbApiClient";
-import type { EnrichedGame, GameAnalysisInput } from "../dto/types";
+import type { EnrichedGame, EnrichedGameRunProjection, GameAnalysisInput } from "../dto/types";
 import { buildAnalysisInputsFromEnrichedGames as buildAnalysisInputs } from "../mappers/enrichedGameMapper";
+import { buildRunProjectionsFromEnrichedGames as buildRunProjections } from "../mappers/runProjectionMapper";
 
 type EnrichDailyGamesParams = {
   date: string;
@@ -49,7 +50,10 @@ export async function enrichDailyGames({ date }: EnrichDailyGamesParams): Promis
   );
 }
 
-
 export function buildAnalysisInputsFromEnrichedGames(enrichedGames: EnrichedGame[]): GameAnalysisInput[] {
   return buildAnalysisInputs(enrichedGames);
+}
+
+export function buildRunProjectionsFromEnrichedGames(enrichedGames: EnrichedGame[]): EnrichedGameRunProjection[] {
+  return buildRunProjections(enrichedGames);
 }
