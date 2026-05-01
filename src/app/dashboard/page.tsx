@@ -10,6 +10,7 @@ import type {
   DailyScanResult,
   EnrichedGame,
   EnrichedGameRunProjection,
+  GameOdds,
   GameAnalysisInput,
   GameRecord,
 } from "@/features/mlb/application/dto/types";
@@ -37,6 +38,7 @@ type RefreshGamesSuccess = {
   games: GameRecord[];
   enrichedGames: EnrichedGame[];
   runProjections: EnrichedGameRunProjection[];
+  odds: Record<string, GameOdds>;
 };
 
 type RefreshGamesError = {
@@ -99,6 +101,16 @@ function formatProjectionValue(value: number | null): string {
   return value === null ? "-" : value.toFixed(3);
 }
 
+type OddsRow = {
+  gamePk: number;
+  homeTeam: string;
+  awayTeam: string;
+  lineTotal: number | null;
+  overOdds: number | null;
+  underOdds: number | null;
+  sportsbook: string;
+};
+
 export default function DashboardPage() {
   const [date, setDate] = useState("2026-04-30");
   const [rows, setRows] = useState<GameInputFormRow[]>(defaultRows);
@@ -110,6 +122,26 @@ export default function DashboardPage() {
   const [refreshResult, setRefreshResult] = useState<RefreshGamesSuccess | null>(null);
 
   const rowIndexes = useMemo(() => [0, 1, 2], []);
+  const oddsRows = useMemo<OddsRow[]>(() => {
+    if (!refreshResult) {
+      return [];
+    }
+
+    return Object.entries(refreshResult.odds as Record<string, GameOdds>).map(([gamePkKey, gameOdds]) => {
+      const gamePk = Number(gamePkKey);
+      const matchedGame = refreshResult.games.find((game) => game.gamePk === gamePk);
+
+      return {
+        gamePk,
+        homeTeam: matchedGame?.homeTeam ?? "-",
+        awayTeam: matchedGame?.awayTeam ?? "-",
+        lineTotal: gameOdds.lineTotal,
+        overOdds: gameOdds.overOdds,
+        underOdds: gameOdds.underOdds,
+        sportsbook: gameOdds.sportsbook,
+      };
+    });
+  }, [refreshResult]);
 
   function updateRow(index: number, patch: Partial<GameInputFormRow>) {
     setRows((prevRows) => prevRows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
@@ -306,6 +338,40 @@ export default function DashboardPage() {
                         <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatProjectionValue(projection.awayExpectedRuns)}</td>
                         <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatProjectionValue(projection.totalExpectedRuns)}</td>
                         <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{projection.reason}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <h3 style={{ marginTop: "1rem" }}>Odds</h3>
+            {oddsRows.length === 0 ? (
+              <p>No odds available</p>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>gamePk</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>homeTeam</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>awayTeam</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>lineTotal</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>overOdds</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>underOdds</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>sportsbook</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {oddsRows.map((oddsRow) => (
+                      <tr key={oddsRow.gamePk}>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{oddsRow.gamePk}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{oddsRow.homeTeam}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{oddsRow.awayTeam}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatNullableValue(oddsRow.lineTotal)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatNullableValue(oddsRow.overOdds)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatNullableValue(oddsRow.underOdds)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{oddsRow.sportsbook}</td>
                       </tr>
                     ))}
                   </tbody>
