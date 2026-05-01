@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { enrichDailyGames } from "@/features/mlb/application/use-cases/enrichDailyGames";
 import { gamesRepository } from "@/features/mlb/infrastructure/repositories/gamesRepository";
+import { scheduleProvider } from "@/features/mlb/infrastructure/providers/scheduleProvider";
 import { todayISO } from "@/lib/utils/dates";
 
 type RefreshGamesBody = {
@@ -26,14 +27,16 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const date = getDateFromBody(body);
 
-    const normalizedGames = await enrichDailyGames({ date });
+    const normalizedGames = await scheduleProvider(date);
     const games = await gamesRepository.upsertGames(normalizedGames);
+    const enrichedGames = await enrichDailyGames({ date });
 
     return NextResponse.json({
       ok: true,
       date,
       count: games.length,
       games,
+      enrichedGames,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";

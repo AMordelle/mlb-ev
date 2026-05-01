@@ -30,6 +30,33 @@ export type GameUpsertInput = {
   season: number | null;
 };
 
+
+
+export type ProbablePitcherInfo = {
+  id: number;
+  fullName: string;
+};
+
+export type PitcherStatLine = {
+  pitcherId: number;
+  pitcherName: string;
+  era: number | null;
+};
+
+export type EnrichedGame = {
+  gamePk: number;
+  gameDate: string;
+  homeTeam: string;
+  awayTeam: string;
+  venue: string | null;
+  status: string;
+  season: number | null;
+  homeProbablePitcher: ProbablePitcherInfo | null;
+  awayProbablePitcher: ProbablePitcherInfo | null;
+  homePitcherEra: number | null;
+  awayPitcherEra: number | null;
+};
+
 export type GameAnalysisInput = {
   id?: string;
   gameId: string;
