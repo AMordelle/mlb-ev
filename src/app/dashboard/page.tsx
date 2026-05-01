@@ -5,8 +5,9 @@ import { useMemo, useState } from "react";
 import { OpportunityTable } from "@/components/picks/OpportunityTable";
 import { PickCard } from "@/components/picks/PickCard";
 import { RiskPanel } from "@/components/picks/RiskPanel";
-import type { Confidence, DailyScanResult, GameAnalysisInput } from "@/features/mlb/application/dto/types";
+import type { Confidence, DailyScanResult, GameAnalysisInput, GameRecord } from "@/features/mlb/application/dto/types";
 import { analyzeTodayGames } from "@/features/mlb/application/use-cases/analyzeTodayGames";
+import { todayISO } from "@/lib/utils/dates";
 
 type GameInputFormRow = {
   gameId: string;
@@ -20,6 +21,18 @@ type GameInputFormRow = {
   overOdds: string;
   underOdds: string;
   dataConfidence: Confidence;
+};
+
+type RefreshGamesSuccess = {
+  ok: true;
+  date: string;
+  count: number;
+  games: GameRecord[];
+};
+
+type RefreshGamesError = {
+  ok: false;
+  error: string;
 };
 
 const defaultRows: GameInputFormRow[] = [
@@ -74,6 +87,11 @@ export default function DashboardPage() {
   const [rows, setRows] = useState<GameInputFormRow[]>(defaultRows);
   const [result, setResult] = useState<DailyScanResult | null>(null);
 
+  const [refreshDate, setRefreshDate] = useState(todayISO());
+  const [refreshLoading, setRefreshLoading] = useState(false);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [refreshResult, setRefreshResult] = useState<RefreshGamesSuccess | null>(null);
+
   const rowIndexes = useMemo(() => [0, 1, 2], []);
 
   function updateRow(index: number, patch: Partial<GameInputFormRow>) {
@@ -96,6 +114,34 @@ export default function DashboardPage() {
     }));
   }
 
+  async function handleRefreshGames() {
+    setRefreshLoading(true);
+    setRefreshError(null);
+    setRefreshResult(null);
+
+    try {
+      const response = await fetch("/api/mlb/refresh-games", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ date: refreshDate.trim() }),
+      });
+
+      const body: RefreshGamesSuccess | RefreshGamesError = await response.json();
+      if (!response.ok || !body.ok) {
+        throw new Error(body.ok ? "Failed to refresh MLB games." : body.error);
+      }
+
+      setRefreshResult(body);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error.";
+      setRefreshError(message);
+    } finally {
+      setRefreshLoading(false);
+    }
+  }
+
   function handleAnalyze() {
     const gameInputs = buildInputRows();
     const analysis = analyzeTodayGames({ date: date.trim(), gameInputs });
@@ -106,6 +152,80 @@ export default function DashboardPage() {
     <main className="dashboard-page" style={{ maxWidth: 1100, margin: "0 auto", padding: "1rem" }}>
       <h1>MLB EV+ Manual Dashboard</h1>
       <p>Enter up to 3 games, run analysis, and inspect the EV+ scan output.</p>
+
+      <section className="refresh-games" style={{ marginTop: "1rem" }}>
+        <h2>Actualizar juegos MLB</h2>
+        <p>Dispara la ingesta de calendario desde el endpoint existente y revisa el resultado.</p>
+
+        <div style={{ display: "flex", alignItems: "flex-end", gap: "0.75rem", flexWrap: "wrap" }}>
+          <label htmlFor="refresh-date">
+            Fecha
+            <br />
+            <input
+              id="refresh-date"
+              type="date"
+              value={refreshDate}
+              onChange={(event) => setRefreshDate(event.target.value)}
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={handleRefreshGames}
+            disabled={refreshLoading}
+            style={{ padding: "0.6rem 1rem", fontWeight: 600 }}
+          >
+            {refreshLoading ? "Actualizando..." : "Actualizar juegos"}
+          </button>
+        </div>
+
+        {refreshError ? (
+          <p role="alert" style={{ marginTop: "0.75rem", color: "#b91c1c" }}>
+            {refreshError}
+          </p>
+        ) : null}
+
+        {refreshResult ? (
+          <div style={{ marginTop: "1rem" }}>
+            <h3>Resultado</h3>
+            <ul>
+              <li>
+                <strong>Date:</strong> {refreshResult.date}
+              </li>
+              <li>
+                <strong>Count:</strong> {refreshResult.count}
+              </li>
+            </ul>
+
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>gamePk</th>
+                    <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>awayTeam</th>
+                    <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>homeTeam</th>
+                    <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>venue</th>
+                    <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>status</th>
+                    <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>officialDatetime</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {refreshResult.games.map((game) => (
+                    <tr key={game.id}>
+                      <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{game.gamePk}</td>
+                      <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{game.awayTeam}</td>
+                      <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{game.homeTeam}</td>
+                      <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{game.venue ?? "-"}</td>
+                      <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{game.status}</td>
+                      <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{game.officialDatetime ?? "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : null}
+      </section>
 
       <section className="scan-inputs" style={{ marginTop: "1rem" }}>
         <h2>Scan inputs</h2>
