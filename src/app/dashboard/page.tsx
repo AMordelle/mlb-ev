@@ -5,7 +5,14 @@ import { useMemo, useState } from "react";
 import { OpportunityTable } from "@/components/picks/OpportunityTable";
 import { PickCard } from "@/components/picks/PickCard";
 import { RiskPanel } from "@/components/picks/RiskPanel";
-import type { Confidence, DailyScanResult, GameAnalysisInput, GameRecord } from "@/features/mlb/application/dto/types";
+import type {
+  Confidence,
+  DailyScanResult,
+  EnrichedGame,
+  EnrichedGameRunProjection,
+  GameAnalysisInput,
+  GameRecord,
+} from "@/features/mlb/application/dto/types";
 import { analyzeTodayGames } from "@/features/mlb/application/use-cases/analyzeTodayGames";
 import { todayISO } from "@/lib/utils/dates";
 
@@ -28,6 +35,8 @@ type RefreshGamesSuccess = {
   date: string;
   count: number;
   games: GameRecord[];
+  enrichedGames: EnrichedGame[];
+  runProjections: EnrichedGameRunProjection[];
 };
 
 type RefreshGamesError = {
@@ -80,6 +89,14 @@ const defaultRows: GameInputFormRow[] = [
 function parseNumber(value: string): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
+function formatNullableValue(value: number | string | null): string | number {
+  return value ?? "-";
+}
+
+function formatProjectionValue(value: number | null): string {
+  return value === null ? "-" : value.toFixed(3);
 }
 
 export default function DashboardPage() {
@@ -223,6 +240,78 @@ export default function DashboardPage() {
                 </tbody>
               </table>
             </div>
+
+            <h3 style={{ marginTop: "1rem" }}>Enriched Games</h3>
+            {refreshResult.enrichedGames.length === 0 ? (
+              <p>No enriched data available</p>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>gamePk</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>homeTeam</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>awayTeam</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>homeTeamId</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>awayTeamId</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>homeRunsPerGame</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>awayRunsPerGame</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>homePitcherEra</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>awayPitcherEra</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {refreshResult.enrichedGames.map((game) => (
+                      <tr key={game.gamePk}>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{game.gamePk}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{game.homeTeam}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{game.awayTeam}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatNullableValue(game.homeTeamId)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatNullableValue(game.awayTeamId)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatNullableValue(game.homeRunsPerGame)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatNullableValue(game.awayRunsPerGame)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatNullableValue(game.homePitcherEra)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatNullableValue(game.awayPitcherEra)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <h3 style={{ marginTop: "1rem" }}>Run Projections</h3>
+            {refreshResult.runProjections.length === 0 ? (
+              <p>No projections available</p>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>gamePk</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>homeTeam</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>awayTeam</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>homeExpectedRuns</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>awayExpectedRuns</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>totalExpectedRuns</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {refreshResult.runProjections.map((projection) => (
+                      <tr key={projection.gamePk}>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{projection.gamePk}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{projection.homeTeam}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{projection.awayTeam}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatProjectionValue(projection.homeExpectedRuns)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatProjectionValue(projection.awayExpectedRuns)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatProjectionValue(projection.totalExpectedRuns)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{projection.reason}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         ) : null}
       </section>
