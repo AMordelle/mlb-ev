@@ -14,6 +14,8 @@ function mapScheduleGameToRecord(game: Awaited<ReturnType<typeof mlbApiClient.ge
     officialDatetime: game.gameDateTime,
     homeTeam: game.homeTeam,
     awayTeam: game.awayTeam,
+    homeTeamId: game.homeTeamId,
+    awayTeamId: game.awayTeamId,
     venue: game.venue,
     status: game.status ?? "Unknown",
     season: game.season,

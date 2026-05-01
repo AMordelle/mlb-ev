@@ -9,6 +9,8 @@ function createEnrichedGame(overrides: Partial<EnrichedGame> = {}): EnrichedGame
     gameDate: "2026-05-01",
     homeTeam: "NYY",
     awayTeam: "BOS",
+    homeTeamId: null,
+    awayTeamId: null,
     venue: "Sample Park",
     status: "Scheduled",
     season: 2026,

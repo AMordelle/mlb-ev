@@ -19,8 +19,8 @@ describe("mlbApiClient", () => {
                 gamePk: 111,
                 season: "2026",
                 teams: {
-                  home: { team: { name: "Home" }, probablePitcher: { id: 1, fullName: "Home Pitcher" } },
-                  away: { team: { name: "Away" }, probablePitcher: { id: 2, fullName: "Away Pitcher" } },
+                  home: { team: { id: 10, name: "Home" }, probablePitcher: { id: 1, fullName: "Home Pitcher" } },
+                  away: { team: { id: 20, name: "Away" }, probablePitcher: { id: 2, fullName: "Away Pitcher" } },
                 },
               },
             ],
@@ -33,6 +33,8 @@ describe("mlbApiClient", () => {
 
     expect(games[0]?.homeProbablePitcher).toEqual({ id: 1, fullName: "Home Pitcher" });
     expect(games[0]?.awayProbablePitcher).toEqual({ id: 2, fullName: "Away Pitcher" });
+    expect(games[0]?.homeTeamId).toBe(10);
+    expect(games[0]?.awayTeamId).toBe(20);
   });
 
   it("handles missing probable pitcher data", async () => {

@@ -9,6 +9,7 @@ type MlbApiProbablePitcher = {
 
 type MlbApiTeam = {
   team?: {
+    id?: number;
     name?: string;
   };
   probablePitcher?: MlbApiProbablePitcher;
@@ -102,6 +103,8 @@ export type MlbScheduleGame = {
   gameDateTime: string | null;
   homeTeam: string | null;
   awayTeam: string | null;
+  homeTeamId: number | null;
+  awayTeamId: number | null;
   venue: string | null;
   status: string | null;
   season: number | null;
@@ -183,6 +186,8 @@ export const mlbApiClient = {
           gameDateTime: game.gameDate ?? null,
           homeTeam: game.teams?.home?.team?.name ?? null,
           awayTeam: game.teams?.away?.team?.name ?? null,
+          homeTeamId: game.teams?.home?.team?.id ?? null,
+          awayTeamId: game.teams?.away?.team?.id ?? null,
           venue: game.venue?.name ?? null,
           status: game.status?.detailedState ?? game.status?.abstractGameState ?? null,
           season: parseSeason(game.season),

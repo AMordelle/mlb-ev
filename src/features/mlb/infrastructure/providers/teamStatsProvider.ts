@@ -9,7 +9,7 @@ function normalizeRunsPerGame(runs: number | null, gamesPlayed: number | null): 
   return Number((runs / gamesPlayed).toFixed(3));
 }
 
-export async function teamStatsProvider(games: GameUpsertInput[]): Promise<Map<string, TeamStatLine>> {
+export async function teamStatsProvider(games: GameUpsertInput[]): Promise<Map<number, TeamStatLine>> {
   const seasons = new Set(games.map((game) => game.season).filter((season): season is number => season !== null));
 
   if (seasons.size !== 1) {
@@ -18,16 +18,15 @@ export async function teamStatsProvider(games: GameUpsertInput[]): Promise<Map<s
 
   const [season] = [...seasons];
   const stats = await mlbApiClient.getTeamSeasonHittingStats(season);
-  const teamNames = new Set(games.flatMap((game) => [game.homeTeam, game.awayTeam]));
-
-  const statsByTeamName = new Map<string, TeamStatLine>();
+  const teamIds = new Set(games.flatMap((game) => [game.homeTeamId, game.awayTeamId]).filter((teamId): teamId is number => teamId !== null));
+  const statsByTeamId = new Map<number, TeamStatLine>();
 
   for (const stat of stats) {
-    if (!teamNames.has(stat.teamName)) {
+    if (!teamIds.has(stat.teamId)) {
       continue;
     }
 
-    statsByTeamName.set(stat.teamName, {
+    statsByTeamId.set(stat.teamId, {
       teamId: stat.teamId,
       teamName: stat.teamName,
       runs: stat.runs,
@@ -36,5 +35,5 @@ export async function teamStatsProvider(games: GameUpsertInput[]): Promise<Map<s
     });
   }
 
-  return statsByTeamName;
+  return statsByTeamId;
 }
