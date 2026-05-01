@@ -51,6 +51,54 @@ describe("mlbApiClient", () => {
     expect(games[0]?.awayProbablePitcher).toBeNull();
   });
 
+  it("calls schedule endpoint with probable pitcher hydration", async () => {
+    const fetchMock = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ dates: [] }),
+    } as Response);
+
+    await mlbApiClient.getSchedule("2026-04-01");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-04-01&hydrate=probablePitcher",
+      { method: "GET", cache: "no-store" },
+    );
+  });
+
+  it("logs a single development summary for probable pitcher coverage", async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "development";
+    const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+    vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        dates: [
+          {
+            date: "2026-04-01",
+            games: [
+              { gamePk: 111, teams: { home: { probablePitcher: { id: 1, fullName: "A" } }, away: { probablePitcher: { id: 2, fullName: "B" } } } },
+              { gamePk: 112, teams: { home: { probablePitcher: { id: 3, fullName: "C" } }, away: {} } },
+              { gamePk: 113, teams: { home: {}, away: {} } },
+            ],
+          },
+        ],
+      }),
+    } as Response);
+
+    await mlbApiClient.getSchedule("2026-04-01");
+
+    expect(debugSpy).toHaveBeenCalledTimes(1);
+    expect(debugSpy).toHaveBeenCalledWith("mlbApiClient.getSchedule probable pitcher coverage summary", {
+      date: "2026-04-01",
+      totalGames: 3,
+      gamesWithBothProbablePitchers: 1,
+      gamesWithOneProbablePitcher: 1,
+      gamesWithNoProbablePitchers: 1,
+    });
+
+    process.env.NODE_ENV = originalNodeEnv;
+  });
+
   it("parses ERA from pitcher stats", async () => {
     vi.spyOn(global, "fetch").mockResolvedValue({
       ok: true,

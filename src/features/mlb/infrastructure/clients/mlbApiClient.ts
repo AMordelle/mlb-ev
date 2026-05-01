@@ -156,7 +156,7 @@ function isDevelopmentMode(): boolean {
 
 export const mlbApiClient = {
   async getSchedule(date: string): Promise<MlbScheduleGame[]> {
-    const url = `${MLB_SCHEDULE_BASE_URL}?sportId=1&date=${encodeURIComponent(date)}`;
+    const url = `${MLB_SCHEDULE_BASE_URL}?sportId=1&date=${encodeURIComponent(date)}&hydrate=probablePitcher`;
 
     let response: Response;
 
@@ -180,12 +180,18 @@ export const mlbApiClient = {
     }
 
     const games: MlbScheduleGame[] = [];
+    let gamesWithBothProbablePitchers = 0;
+    let gamesWithOneProbablePitcher = 0;
+    let gamesWithNoProbablePitchers = 0;
 
     for (const dateEntry of payload.dates ?? []) {
       for (const game of dateEntry.games ?? []) {
         if (typeof game.gamePk !== "number") {
           continue;
         }
+
+        const homeProbablePitcher = normalizeProbablePitcher(game.teams?.home?.probablePitcher);
+        const awayProbablePitcher = normalizeProbablePitcher(game.teams?.away?.probablePitcher);
 
         games.push({
           gamePk: game.gamePk,
@@ -198,23 +204,28 @@ export const mlbApiClient = {
           venue: game.venue?.name ?? null,
           status: game.status?.detailedState ?? game.status?.abstractGameState ?? null,
           season: parseSeason(game.season),
-          homeProbablePitcher: normalizeProbablePitcher(game.teams?.home?.probablePitcher),
-          awayProbablePitcher: normalizeProbablePitcher(game.teams?.away?.probablePitcher),
+          homeProbablePitcher,
+          awayProbablePitcher,
         });
 
-        if (isDevelopmentMode()) {
-          const homePitcherId = game.teams?.home?.probablePitcher?.id;
-          const awayPitcherId = game.teams?.away?.probablePitcher?.id;
-
-          if (typeof homePitcherId !== "number" || typeof awayPitcherId !== "number") {
-            console.debug("mlbApiClient.getSchedule probable pitcher id missing", {
-              gamePk: game.gamePk,
-              homePitcherId,
-              awayPitcherId,
-            });
-          }
+        if (homeProbablePitcher && awayProbablePitcher) {
+          gamesWithBothProbablePitchers += 1;
+        } else if (homeProbablePitcher || awayProbablePitcher) {
+          gamesWithOneProbablePitcher += 1;
+        } else {
+          gamesWithNoProbablePitchers += 1;
         }
       }
+    }
+
+    if (isDevelopmentMode()) {
+      console.debug("mlbApiClient.getSchedule probable pitcher coverage summary", {
+        date,
+        totalGames: games.length,
+        gamesWithBothProbablePitchers,
+        gamesWithOneProbablePitcher,
+        gamesWithNoProbablePitchers,
+      });
     }
 
     return games;
