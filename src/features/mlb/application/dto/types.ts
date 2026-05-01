@@ -14,8 +14,20 @@ export type GameRecord = {
   venue: string | null;
   status: string;
   season: number | null;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type GameUpsertInput = {
+  id?: string;
+  gamePk: number;
+  gameDate: string;
+  officialDatetime: string | null;
+  homeTeam: string;
+  awayTeam: string;
+  venue: string | null;
+  status: string;
+  season: number | null;
 };
 
 export type GameAnalysisInput = {

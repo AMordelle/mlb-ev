@@ -1,7 +1,7 @@
 import type { PostgrestError } from "@supabase/supabase-js";
 
 import { mapGameRecordToWriteRow, mapGameRowToRecord, type GameRow } from "@/features/mlb/application/mappers/gameMapper";
-import type { GameRecord } from "@/features/mlb/application/dto/types";
+import type { GameRecord, GameUpsertInput } from "@/features/mlb/application/dto/types";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 function throwSupabaseError(operation: string, error: PostgrestError): never {
@@ -28,7 +28,7 @@ export const gamesRepository = {
     return mapGameRowToRecord(data as GameRow);
   },
 
-  async upsertGames(games: GameRecord[]): Promise<GameRecord[]> {
+  async upsertGames(games: GameUpsertInput[]): Promise<GameRecord[]> {
     if (games.length === 0) return [];
 
     const supabase = await getSupabaseServerClient();
