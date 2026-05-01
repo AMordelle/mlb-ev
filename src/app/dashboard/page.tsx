@@ -15,6 +15,7 @@ import type {
   GameAnalysisInput,
   GameRecord,
 } from "@/features/mlb/application/dto/types";
+import { buildDataReadinessSummary } from "@/features/mlb/application/services/dataReadinessService";
 import { analyzeTodayGames } from "@/features/mlb/application/use-cases/analyzeTodayGames";
 import { todayISO } from "@/lib/utils/dates";
 
@@ -111,6 +112,10 @@ function formatEvValue(value: number | null): string {
   return value === null ? "-" : value.toFixed(4);
 }
 
+function formatReadinessPercentage(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
 type OddsRow = {
   gamePk: number;
   homeTeam: string;
@@ -151,6 +156,13 @@ export default function DashboardPage() {
         sportsbook: gameOdds.sportsbook,
       };
     });
+  }, [refreshResult]);
+  const dataReadinessSummary = useMemo(() => {
+    if (!refreshResult) {
+      return null;
+    }
+
+    return buildDataReadinessSummary(refreshResult.analysis ?? []);
   }, [refreshResult]);
 
   function updateRow(index: number, patch: Partial<GameInputFormRow>) {
@@ -387,6 +399,38 @@ export default function DashboardPage() {
                   </tbody>
                 </table>
               </div>
+            )}
+
+            <h3 style={{ marginTop: "1rem" }}>Data Readiness</h3>
+            {dataReadinessSummary ? (
+              <ul>
+                <li>
+                  <strong>Total games:</strong> {dataReadinessSummary.totalGames}
+                </li>
+                <li>
+                  <strong>Valid games:</strong> {dataReadinessSummary.validGames}
+                </li>
+                <li>
+                  <strong>Invalid games:</strong> {dataReadinessSummary.invalidGames}
+                </li>
+                <li>
+                  <strong>Readiness rate:</strong> {formatReadinessPercentage(dataReadinessSummary.readinessRate)}
+                </li>
+                <li>
+                  <strong>Missing projection:</strong> {dataReadinessSummary.missingProjection}
+                </li>
+                <li>
+                  <strong>Missing odds:</strong> {dataReadinessSummary.missingOdds}
+                </li>
+                <li>
+                  <strong>Missing line:</strong> {dataReadinessSummary.missingLine}
+                </li>
+                <li>
+                  <strong>Other:</strong> {dataReadinessSummary.other}
+                </li>
+              </ul>
+            ) : (
+              <p>No data readiness summary available.</p>
             )}
 
             <h3 style={{ marginTop: "1rem" }}>Game Analysis</h3>
