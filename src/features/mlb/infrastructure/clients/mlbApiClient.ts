@@ -58,8 +58,8 @@ type MlbPitcherStatsResponse = {
 };
 
 type MlbTeamHittingStat = {
-  runs?: string;
-  gamesPlayed?: number;
+  runs?: string | number;
+  gamesPlayed?: string | number;
 };
 
 type MlbTeamStatsSplit = {
@@ -71,6 +71,9 @@ type MlbTeamStatsSplit = {
 };
 
 type MlbTeamStatsEntry = {
+  group?: {
+    displayName?: string;
+  };
   splits?: MlbTeamStatsSplit[];
 };
 
@@ -138,12 +141,12 @@ function parseEra(value: string | undefined): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function parseInteger(value: string | undefined): number | null {
-  if (!value) {
+function parseInteger(value: string | number | undefined): number | null {
+  if (value === undefined || value === null || value === "") {
     return null;
   }
 
-  const parsed = Number.parseInt(value, 10);
+  const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
@@ -235,40 +238,52 @@ export const mlbApiClient = {
     };
   },
 
-  async getTeamSeasonHittingStats(season: number): Promise<MlbTeamSeasonHittingStats[]> {
-    const url = `${MLB_TEAMS_BASE_URL}/stats?stats=season&group=hitting&season=${season}`;
+  async getTeamSeasonHittingStats(season: number, teamIds: number[]): Promise<MlbTeamSeasonHittingStats[]> {
+    const uniqueTeamIds = [...new Set(teamIds)];
 
-    let response: Response;
+    const stats = await Promise.all(
+      uniqueTeamIds.map(async (teamId): Promise<MlbTeamSeasonHittingStats | null> => {
+        const url = `${MLB_TEAMS_BASE_URL}/${teamId}/stats?stats=season&group=hitting&season=${season}`;
+        let response: Response;
 
-    try {
-      response = await fetch(url, { method: "GET", cache: "no-store" });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown network error";
-      throw new Error(`mlbApiClient.getTeamSeasonHittingStats network error for season ${season}: ${message}`);
-    }
+        try {
+          response = await fetch(url, { method: "GET", cache: "no-store" });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown network error";
+          throw new Error(`mlbApiClient.getTeamSeasonHittingStats network error for team ${teamId}, season ${season}: ${message}`);
+        }
 
-    if (!response.ok) {
-      throw new Error(`mlbApiClient.getTeamSeasonHittingStats failed for season ${season}: HTTP ${response.status} ${response.statusText}`);
-    }
+        if (!response.ok) {
+          throw new Error(
+            `mlbApiClient.getTeamSeasonHittingStats failed for team ${teamId}, season ${season}: HTTP ${response.status} ${response.statusText}`,
+          );
+        }
 
-    let payload: MlbTeamStatsResponse;
-    try {
-      payload = (await response.json()) as MlbTeamStatsResponse;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Invalid JSON response";
-      throw new Error(`mlbApiClient.getTeamSeasonHittingStats parse error for season ${season}: ${message}`);
-    }
+        let payload: MlbTeamStatsResponse;
+        try {
+          payload = (await response.json()) as MlbTeamStatsResponse;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Invalid JSON response";
+          throw new Error(`mlbApiClient.getTeamSeasonHittingStats parse error for team ${teamId}, season ${season}: ${message}`);
+        }
 
-    return (payload.stats?.[0]?.splits ?? [])
-      .filter((split): split is MlbTeamStatsSplit & { team: { id: number; name: string } } => {
-        return typeof split.team?.id === "number" && typeof split.team?.name === "string";
-      })
-      .map((split) => ({
-        teamId: split.team.id,
-        teamName: split.team.name,
-        season,
-        runs: parseInteger(split.stat?.runs),
-        gamesPlayed: typeof split.stat?.gamesPlayed === "number" ? split.stat.gamesPlayed : null,
-      }));
+        const hittingEntry = payload.stats?.find((entry) => entry.group?.displayName?.toLowerCase() === "hitting") ?? payload.stats?.[0];
+        const split = hittingEntry?.splits?.[0];
+
+        if (!split) {
+          return null;
+        }
+
+        return {
+          teamId,
+          teamName: split.team?.name ?? `Team ${teamId}`,
+          season,
+          runs: parseInteger(split.stat?.runs),
+          gamesPlayed: parseInteger(split.stat?.gamesPlayed),
+        };
+      }),
+    );
+
+    return stats.filter((stat): stat is MlbTeamSeasonHittingStats => stat !== null);
   },
 };

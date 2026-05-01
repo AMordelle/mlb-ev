@@ -17,9 +17,18 @@ export async function teamStatsProvider(games: GameUpsertInput[]): Promise<Map<n
   }
 
   const [season] = [...seasons];
-  const stats = await mlbApiClient.getTeamSeasonHittingStats(season);
   const teamIds = new Set(games.flatMap((game) => [game.homeTeamId, game.awayTeamId]).filter((teamId): teamId is number => teamId !== null));
+  const stats = await mlbApiClient.getTeamSeasonHittingStats(season, [...teamIds]);
   const statsByTeamId = new Map<number, TeamStatLine>();
+
+  const availableStatsTeamIds = new Set(stats.map((stat) => stat.teamId));
+  const missingTeamIds = [...teamIds].filter((teamId) => !availableStatsTeamIds.has(teamId));
+  if (missingTeamIds.length > 0) {
+    console.warn("teamStatsProvider missing season hitting stats for schedule team IDs", {
+      season,
+      missingTeamIds,
+    });
+  }
 
   for (const stat of stats) {
     if (!teamIds.has(stat.teamId)) {
@@ -32,6 +41,14 @@ export async function teamStatsProvider(games: GameUpsertInput[]): Promise<Map<n
       runs: stat.runs,
       gamesPlayed: stat.gamesPlayed,
       runsPerGame: normalizeRunsPerGame(stat.runs, stat.gamesPlayed),
+    });
+  }
+
+  if (statsByTeamId.size === 0 && teamIds.size > 0) {
+    console.warn("teamStatsProvider produced empty stats map", {
+      season,
+      scheduleTeamIds: [...teamIds],
+      statsTeamIds: [...availableStatsTeamIds],
     });
   }
 

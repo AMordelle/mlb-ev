@@ -72,4 +72,40 @@ describe("mlbApiClient", () => {
 
     expect(stats.era).toBeNull();
   });
+
+  it("parses team hitting stats using requested MLB team IDs", async () => {
+    const fetchMock = vi.spyOn(global, "fetch");
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          stats: [
+            {
+              group: { displayName: "hitting" },
+              splits: [{ team: { id: 4864, name: "Home" }, stat: { runs: "141", gamesPlayed: "30" } }],
+            },
+          ],
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          stats: [
+            {
+              group: { displayName: "hitting" },
+              splits: [{ team: { id: 5323, name: "Away" }, stat: { runs: 99, gamesPlayed: 25 } }],
+            },
+          ],
+        }),
+      } as Response);
+
+    const stats = await mlbApiClient.getTeamSeasonHittingStats(2026, [112, 109]);
+
+    expect(fetchMock.mock.calls[0]?.[0]).toContain("/teams/112/stats");
+    expect(fetchMock.mock.calls[1]?.[0]).toContain("/teams/109/stats");
+    expect(stats).toEqual([
+      { teamId: 112, teamName: "Home", season: 2026, runs: 141, gamesPlayed: 30 },
+      { teamId: 109, teamName: "Away", season: 2026, runs: 99, gamesPlayed: 25 },
+    ]);
+  });
 });
