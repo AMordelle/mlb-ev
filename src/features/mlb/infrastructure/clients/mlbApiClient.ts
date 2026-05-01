@@ -58,8 +58,8 @@ type MlbPitcherStatsResponse = {
 };
 
 type MlbTeamHittingStat = {
-  runs?: string;
-  gamesPlayed?: number;
+  runs?: string | number;
+  gamesPlayed?: string | number;
 };
 
 type MlbTeamStatsSplit = {
@@ -138,12 +138,12 @@ function parseEra(value: string | undefined): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function parseInteger(value: string | undefined): number | null {
-  if (!value) {
+function parseInteger(value: string | number | undefined): number | null {
+  if (value === undefined || value === null || value === "") {
     return null;
   }
 
-  const parsed = Number.parseInt(value, 10);
+  const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
@@ -259,6 +259,14 @@ export const mlbApiClient = {
       throw new Error(`mlbApiClient.getTeamSeasonHittingStats parse error for season ${season}: ${message}`);
     }
 
+    const firstStat = payload.stats?.[0]?.splits?.[0]?.stat;
+    console.debug("mlbApiClient.getTeamSeasonHittingStats payload sample", {
+      season,
+      runs: firstStat?.runs,
+      gamesPlayed: firstStat?.gamesPlayed,
+      splitCount: payload.stats?.[0]?.splits?.length ?? 0,
+    });
+
     return (payload.stats?.[0]?.splits ?? [])
       .filter((split): split is MlbTeamStatsSplit & { team: { id: number; name: string } } => {
         return typeof split.team?.id === "number" && typeof split.team?.name === "string";
@@ -268,7 +276,7 @@ export const mlbApiClient = {
         teamName: split.team.name,
         season,
         runs: parseInteger(split.stat?.runs),
-        gamesPlayed: typeof split.stat?.gamesPlayed === "number" ? split.stat.gamesPlayed : null,
+        gamesPlayed: parseInteger(split.stat?.gamesPlayed),
       }));
   },
 };
