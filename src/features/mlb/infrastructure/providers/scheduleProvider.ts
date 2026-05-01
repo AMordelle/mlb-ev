@@ -1,7 +1,7 @@
-import type { GameRecord } from "../../application/dto/types";
+import type { GameUpsertInput } from "../../application/dto/types";
 import { mlbApiClient } from "../clients/mlbApiClient";
 
-function mapScheduleGameToRecord(game: Awaited<ReturnType<typeof mlbApiClient.getSchedule>>[number], date: string): GameRecord | null {
+function mapScheduleGameToRecord(game: Awaited<ReturnType<typeof mlbApiClient.getSchedule>>[number], date: string): GameUpsertInput | null {
   if (!game.homeTeam || !game.awayTeam) {
     return null;
   }
@@ -9,7 +9,6 @@ function mapScheduleGameToRecord(game: Awaited<ReturnType<typeof mlbApiClient.ge
   const gameDate = game.officialDate ?? date;
 
   return {
-    id: String(game.gamePk),
     gamePk: game.gamePk,
     gameDate,
     officialDatetime: game.gameDateTime,
@@ -21,10 +20,10 @@ function mapScheduleGameToRecord(game: Awaited<ReturnType<typeof mlbApiClient.ge
   };
 }
 
-export async function scheduleProvider(date: string): Promise<GameRecord[]> {
+export async function scheduleProvider(date: string): Promise<GameUpsertInput[]> {
   const scheduleGames = await mlbApiClient.getSchedule(date);
 
   return scheduleGames
     .map((game) => mapScheduleGameToRecord(game, date))
-    .filter((game): game is GameRecord => game !== null);
+    .filter((game): game is GameUpsertInput => game !== null);
 }

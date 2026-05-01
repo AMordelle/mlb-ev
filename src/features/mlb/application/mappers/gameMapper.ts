@@ -1,4 +1,4 @@
-import type { GameRecord } from "../dto/types";
+import type { GameRecord, GameUpsertInput } from "../dto/types";
 
 export type GameRow = {
   id: string;
@@ -42,9 +42,9 @@ export function mapGameRowToRecord(row: GameRow): GameRecord {
   };
 }
 
-export function mapGameRecordToWriteRow(record: GameRecord): GameWriteRow {
+export function mapGameRecordToWriteRow(record: GameUpsertInput): GameWriteRow {
   return {
-    id: record.id,
+    ...(record.id ? { id: record.id } : {}),
     game_pk: record.gamePk,
     game_date: record.gameDate,
     official_datetime: record.officialDatetime,
