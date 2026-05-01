@@ -33,7 +33,7 @@ describe("enrichDailyGames", () => {
     vi.mocked(mlbApiClient.getSchedule).mockResolvedValue([
       { gamePk: 100, officialDate: "2026-04-01", gameDateTime: null, homeTeam: "Home", awayTeam: "Away", venue: null, status: "Scheduled", season: 2026, homeProbablePitcher: null, awayProbablePitcher: null },
     ]);
-    vi.mocked(pitcherStatsProvider).mockResolvedValue(null);
+    vi.mocked(pitcherStatsProvider).mockResolvedValue({ pitcherId: 0, pitcherName: "Unknown", era: null });
     vi.mocked(teamStatsProvider).mockResolvedValue(new Map([
       ["Home", { teamId: 1, teamName: "Home", runs: 120, gamesPlayed: 30, runsPerGame: 4 }],
       ["Away", { teamId: 2, teamName: "Away", runs: 100, gamesPlayed: 25, runsPerGame: 4 }],
