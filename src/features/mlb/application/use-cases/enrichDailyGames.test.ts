@@ -114,4 +114,29 @@ describe("enrichDailyGames", () => {
     expect(enriched[0]?.awayPitcherEra).toBeNull();
   });
 
+  it("caches pitcher ERA requests by pitcher id and season within a single enrichment run", async () => {
+    vi.mocked(scheduleProvider).mockResolvedValue([
+      { gamePk: 301, gameDate: "2026-04-01", officialDatetime: null, homeTeam: "Home A", awayTeam: "Away A", homeTeamId: 1, awayTeamId: 2, venue: null, status: "Scheduled", season: 2026 },
+      { gamePk: 302, gameDate: "2026-04-01", officialDatetime: null, homeTeam: "Home B", awayTeam: "Away B", homeTeamId: 3, awayTeamId: 4, venue: null, status: "Scheduled", season: 2026 },
+    ]);
+    vi.mocked(mlbApiClient.getSchedule).mockResolvedValue([
+      {
+        gamePk: 301, officialDate: "2026-04-01", gameDateTime: null, homeTeam: "Home A", awayTeam: "Away A", homeTeamId: 1, awayTeamId: 2,
+        venue: null, status: "Scheduled", season: 2026, homeProbablePitcher: { id: 77, fullName: "Shared Starter" }, awayProbablePitcher: null,
+      },
+      {
+        gamePk: 302, officialDate: "2026-04-01", gameDateTime: null, homeTeam: "Home B", awayTeam: "Away B", homeTeamId: 3, awayTeamId: 4,
+        venue: null, status: "Scheduled", season: 2026, homeProbablePitcher: { id: 77, fullName: "Shared Starter" }, awayProbablePitcher: null,
+      },
+    ]);
+    vi.mocked(pitcherStatsProvider).mockResolvedValue({ pitcherId: 77, pitcherName: "Shared Starter", era: 3.01 });
+    vi.mocked(teamStatsProvider).mockResolvedValue(new Map());
+
+    const enriched = await enrichDailyGames({ date: "2026-04-01" });
+
+    expect(vi.mocked(pitcherStatsProvider)).toHaveBeenCalledTimes(1);
+    expect(enriched[0]?.homePitcherEra).toBe(3.01);
+    expect(enriched[1]?.homePitcherEra).toBe(3.01);
+  });
+
 });

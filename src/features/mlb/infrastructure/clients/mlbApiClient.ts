@@ -150,6 +150,10 @@ function parseInteger(value: string | number | undefined): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function isDevelopmentMode(): boolean {
+  return process.env.NODE_ENV === "development";
+}
+
 export const mlbApiClient = {
   async getSchedule(date: string): Promise<MlbScheduleGame[]> {
     const url = `${MLB_SCHEDULE_BASE_URL}?sportId=1&date=${encodeURIComponent(date)}`;
@@ -197,6 +201,19 @@ export const mlbApiClient = {
           homeProbablePitcher: normalizeProbablePitcher(game.teams?.home?.probablePitcher),
           awayProbablePitcher: normalizeProbablePitcher(game.teams?.away?.probablePitcher),
         });
+
+        if (isDevelopmentMode()) {
+          const homePitcherId = game.teams?.home?.probablePitcher?.id;
+          const awayPitcherId = game.teams?.away?.probablePitcher?.id;
+
+          if (typeof homePitcherId !== "number" || typeof awayPitcherId !== "number") {
+            console.debug("mlbApiClient.getSchedule probable pitcher id missing", {
+              gamePk: game.gamePk,
+              homePitcherId,
+              awayPitcherId,
+            });
+          }
+        }
       }
     }
 
@@ -227,6 +244,14 @@ export const mlbApiClient = {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Invalid JSON response";
       throw new Error(`mlbApiClient.getPitcherSeasonStats parse error for pitcher ${pitcherId}, season ${season}: ${message}`);
+    }
+
+    if (isDevelopmentMode()) {
+      console.debug("mlbApiClient.getPitcherSeasonStats raw ERA payload", {
+        pitcherId,
+        season,
+        rawEra: payload.stats?.[0]?.splits?.[0]?.stat?.era ?? null,
+      });
     }
 
     const era = parseEra(payload.stats?.[0]?.splits?.[0]?.stat?.era);

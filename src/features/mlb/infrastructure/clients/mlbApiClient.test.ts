@@ -62,6 +62,17 @@ describe("mlbApiClient", () => {
     expect(stats.era).toBe(3.45);
   });
 
+  it("parses numeric ERA from pitcher stats", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ stats: [{ splits: [{ stat: { era: 2.91 } }] }] }),
+    } as Response);
+
+    const stats = await mlbApiClient.getPitcherSeasonStats(10, 2026);
+
+    expect(stats.era).toBe(2.91);
+  });
+
 
   it("calls MLB people stats endpoint with pitcher id and season", async () => {
     const fetchMock = vi.spyOn(global, "fetch").mockResolvedValue({
@@ -92,6 +103,17 @@ describe("mlbApiClient", () => {
     vi.spyOn(global, "fetch").mockResolvedValue({
       ok: true,
       json: async () => ({ stats: [] }),
+    } as Response);
+
+    const stats = await mlbApiClient.getPitcherSeasonStats(10, 2026);
+
+    expect(stats.era).toBeNull();
+  });
+
+  it("returns null ERA when splits are empty", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ stats: [{ splits: [] }] }),
     } as Response);
 
     const stats = await mlbApiClient.getPitcherSeasonStats(10, 2026);
