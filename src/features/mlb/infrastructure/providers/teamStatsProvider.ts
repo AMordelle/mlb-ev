@@ -17,8 +17,8 @@ export async function teamStatsProvider(games: GameUpsertInput[]): Promise<Map<n
   }
 
   const [season] = [...seasons];
-  const stats = await mlbApiClient.getTeamSeasonHittingStats(season);
   const teamIds = new Set(games.flatMap((game) => [game.homeTeamId, game.awayTeamId]).filter((teamId): teamId is number => teamId !== null));
+  const stats = await mlbApiClient.getTeamSeasonHittingStats(season, [...teamIds]);
   const statsByTeamId = new Map<number, TeamStatLine>();
 
   const availableStatsTeamIds = new Set(stats.map((stat) => stat.teamId));

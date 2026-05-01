@@ -20,7 +20,7 @@ describe("teamStatsProvider", () => {
   });
 
   it("creates map entries keyed by schedule team IDs", async () => {
-    vi.spyOn(mlbApiClient, "getTeamSeasonHittingStats").mockResolvedValue([
+    const statsSpy = vi.spyOn(mlbApiClient, "getTeamSeasonHittingStats").mockResolvedValue([
       { teamId: 10, teamName: "Home", season: 2026, runs: 141, gamesPlayed: 30 },
       { teamId: 20, teamName: "Away", season: 2026, runs: 99, gamesPlayed: 25 },
       { teamId: 30, teamName: "Other", season: 2026, runs: 110, gamesPlayed: 26 },
@@ -31,6 +31,7 @@ describe("teamStatsProvider", () => {
     ]);
 
     expect([...result.keys()]).toEqual([10, 20]);
+    expect(statsSpy).toHaveBeenCalledWith(2026, [10, 20]);
     expect(result.get(10)?.runsPerGame).toBe(4.7);
     expect(result.get(20)?.runsPerGame).toBe(3.96);
   });
