@@ -66,8 +66,7 @@ describe("mlbApiClient", () => {
   });
 
   it("logs a single development summary for probable pitcher coverage", async () => {
-    const originalNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "development";
+    vi.stubEnv("NODE_ENV", "development");
     const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
     vi.spyOn(global, "fetch").mockResolvedValue({
       ok: true,
@@ -96,7 +95,7 @@ describe("mlbApiClient", () => {
       gamesWithNoProbablePitchers: 1,
     });
 
-    process.env.NODE_ENV = originalNodeEnv;
+    vi.unstubAllEnvs();
   });
 
   it("parses ERA from pitcher stats", async () => {
