@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { enrichDailyGames } from "./enrichDailyGames";
 
@@ -26,6 +26,10 @@ import { teamStatsProvider } from "../../infrastructure/providers/teamStatsProvi
 import { mlbApiClient } from "../../infrastructure/clients/mlbApiClient";
 
 describe("enrichDailyGames", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("attaches home and away runs per game", async () => {
     vi.mocked(scheduleProvider).mockResolvedValue([
       { gamePk: 100, gameDate: "2026-04-01", officialDatetime: null, homeTeam: "Home", awayTeam: "Away", homeTeamId: 1, awayTeamId: 2, venue: null, status: "Scheduled", season: 2026 },
