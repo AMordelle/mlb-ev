@@ -72,6 +72,16 @@ export type EnrichedGame = {
 };
 
 
+
+export type GameOdds = {
+  gamePk: number;
+  lineTotal: number | null;
+  overOdds: number | null;
+  underOdds: number | null;
+  sportsbook: string;
+  retrievedAt: string;
+};
+
 export type EnrichedGameRunProjection = {
   gamePk: number;
   gameDate: string;
