@@ -43,6 +43,14 @@ export type PitcherStatLine = {
   era: number | null;
 };
 
+export type TeamStatLine = {
+  teamId: number;
+  teamName: string;
+  runs: number | null;
+  gamesPlayed: number | null;
+  runsPerGame: number | null;
+};
+
 export type EnrichedGame = {
   gamePk: number;
   gameDate: string;
@@ -55,6 +63,8 @@ export type EnrichedGame = {
   awayProbablePitcher: ProbablePitcherInfo | null;
   homePitcherEra: number | null;
   awayPitcherEra: number | null;
+  homeRunsPerGame: number | null;
+  awayRunsPerGame: number | null;
 };
 
 export type GameAnalysisInput = {

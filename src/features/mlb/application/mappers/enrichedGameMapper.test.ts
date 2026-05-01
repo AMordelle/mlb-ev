@@ -16,6 +16,8 @@ function createEnrichedGame(overrides: Partial<EnrichedGame> = {}): EnrichedGame
     awayProbablePitcher: { id: 2, fullName: "Away Pitcher" },
     homePitcherEra: 3.21,
     awayPitcherEra: 3.89,
+    homeRunsPerGame: null,
+    awayRunsPerGame: null,
     ...overrides,
   };
 }
