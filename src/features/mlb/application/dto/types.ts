@@ -71,6 +71,18 @@ export type EnrichedGame = {
   awayRunsPerGame: number | null;
 };
 
+
+export type EnrichedGameRunProjection = {
+  gamePk: number;
+  gameDate: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeExpectedRuns: number | null;
+  awayExpectedRuns: number | null;
+  totalExpectedRuns: number | null;
+  reason: string;
+};
+
 export type GameAnalysisInput = {
   id?: string;
   gameId: string;
