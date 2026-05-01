@@ -1,9 +1,16 @@
 const MLB_SCHEDULE_BASE_URL = "https://statsapi.mlb.com/api/v1/schedule";
+const MLB_PEOPLE_BASE_URL = "https://statsapi.mlb.com/api/v1/people";
+
+type MlbApiProbablePitcher = {
+  id?: number;
+  fullName?: string;
+};
 
 type MlbApiTeam = {
   team?: {
     name?: string;
   };
+  probablePitcher?: MlbApiProbablePitcher;
 };
 
 type MlbApiGame = {
@@ -32,6 +39,33 @@ type MlbScheduleResponse = {
   dates?: MlbApiDate[];
 };
 
+type MlbPitchingStat = {
+  era?: string;
+};
+
+type MlbPitcherStatsSplit = {
+  stat?: MlbPitchingStat;
+};
+
+type MlbPitcherStatsEntry = {
+  splits?: MlbPitcherStatsSplit[];
+};
+
+type MlbPitcherStatsResponse = {
+  stats?: MlbPitcherStatsEntry[];
+};
+
+export type MlbProbablePitcher = {
+  id: number;
+  fullName: string;
+};
+
+export type MlbPitcherSeasonStats = {
+  pitcherId: number;
+  season: number;
+  era: number | null;
+};
+
 export type MlbScheduleGame = {
   gamePk: number;
   officialDate: string | null;
@@ -41,11 +75,33 @@ export type MlbScheduleGame = {
   venue: string | null;
   status: string | null;
   season: number | null;
+  homeProbablePitcher: MlbProbablePitcher | null;
+  awayProbablePitcher: MlbProbablePitcher | null;
 };
 
 function parseSeason(value: string | undefined): number | null {
   if (!value) return null;
   const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizeProbablePitcher(pitcher: MlbApiProbablePitcher | undefined): MlbProbablePitcher | null {
+  if (!pitcher || typeof pitcher.id !== "number" || typeof pitcher.fullName !== "string" || pitcher.fullName.trim().length === 0) {
+    return null;
+  }
+
+  return {
+    id: pitcher.id,
+    fullName: pitcher.fullName,
+  };
+}
+
+function parseEra(value: string | undefined): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
@@ -91,10 +147,47 @@ export const mlbApiClient = {
           venue: game.venue?.name ?? null,
           status: game.status?.detailedState ?? game.status?.abstractGameState ?? null,
           season: parseSeason(game.season),
+          homeProbablePitcher: normalizeProbablePitcher(game.teams?.home?.probablePitcher),
+          awayProbablePitcher: normalizeProbablePitcher(game.teams?.away?.probablePitcher),
         });
       }
     }
 
     return games;
+  },
+
+  async getPitcherSeasonStats(pitcherId: number, season: number): Promise<MlbPitcherSeasonStats> {
+    const url = `${MLB_PEOPLE_BASE_URL}/${pitcherId}/stats?stats=season&group=pitching&season=${season}`;
+
+    let response: Response;
+
+    try {
+      response = await fetch(url, { method: "GET", cache: "no-store" });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown network error";
+      throw new Error(`mlbApiClient.getPitcherSeasonStats network error for pitcher ${pitcherId}, season ${season}: ${message}`);
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        `mlbApiClient.getPitcherSeasonStats failed for pitcher ${pitcherId}, season ${season}: HTTP ${response.status} ${response.statusText}`,
+      );
+    }
+
+    let payload: MlbPitcherStatsResponse;
+    try {
+      payload = (await response.json()) as MlbPitcherStatsResponse;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invalid JSON response";
+      throw new Error(`mlbApiClient.getPitcherSeasonStats parse error for pitcher ${pitcherId}, season ${season}: ${message}`);
+    }
+
+    const era = parseEra(payload.stats?.[0]?.splits?.[0]?.stat?.era);
+
+    return {
+      pitcherId,
+      season,
+      era,
+    };
   },
 };
