@@ -93,6 +93,32 @@ export type EnrichedGameRunProjection = {
   reason: string;
 };
 
+
+export type GameAnalysis = {
+  gamePk: number;
+  gameDate: string;
+  homeTeam: string;
+  awayTeam: string;
+
+  lineTotal: number | null;
+
+  overOdds: number | null;
+  underOdds: number | null;
+
+  homeExpectedRuns: number | null;
+  awayExpectedRuns: number | null;
+  totalExpectedRuns: number | null;
+
+  overProbability: number | null;
+  underProbability: number | null;
+
+  overEV: number | null;
+  underEV: number | null;
+
+  valid: boolean;
+  reason: string;
+};
+
 export type GameAnalysisInput = {
   id?: string;
   gameId: string;

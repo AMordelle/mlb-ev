@@ -4,6 +4,7 @@ import { buildRunProjectionsFromEnrichedGames, enrichDailyGames } from "@/featur
 import { gamesRepository } from "@/features/mlb/infrastructure/repositories/gamesRepository";
 import { scheduleProvider } from "@/features/mlb/infrastructure/providers/scheduleProvider";
 import { getOddsForGames } from "@/features/mlb/infrastructure/providers/oddsProvider";
+import { buildGameAnalysis } from "@/features/mlb/application/services/gameAnalysisService";
 import { todayISO } from "@/lib/utils/dates";
 
 type RefreshGamesBody = {
@@ -33,6 +34,11 @@ export async function POST(request: Request) {
     const enrichedGames = await enrichDailyGames({ date });
     const runProjections = buildRunProjectionsFromEnrichedGames(enrichedGames);
     const odds = await getOddsForGames(enrichedGames.map((game) => game.gamePk));
+    const analysis = buildGameAnalysis({
+      enrichedGames,
+      runProjections,
+      odds,
+    });
 
     return NextResponse.json({
       ok: true,
@@ -42,6 +48,7 @@ export async function POST(request: Request) {
       enrichedGames,
       runProjections,
       odds: Object.fromEntries(odds),
+      analysis,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
