@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { enrichDailyGames } from "./enrichDailyGames";
 
@@ -26,6 +26,10 @@ import { teamStatsProvider } from "../../infrastructure/providers/teamStatsProvi
 import { mlbApiClient } from "../../infrastructure/clients/mlbApiClient";
 
 describe("enrichDailyGames", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("attaches home and away runs per game", async () => {
     vi.mocked(scheduleProvider).mockResolvedValue([
       { gamePk: 100, gameDate: "2026-04-01", officialDatetime: null, homeTeam: "Home", awayTeam: "Away", homeTeamId: 1, awayTeamId: 2, venue: null, status: "Scheduled", season: 2026 },
@@ -67,4 +71,47 @@ describe("enrichDailyGames", () => {
     expect(enriched[0]?.homeRunsPerGame).toBeNull();
     expect(enriched[0]?.awayRunsPerGame).toBeNull();
   });
+
+  it("propagates home/away probable pitcher ERA into enrichment", async () => {
+    vi.mocked(scheduleProvider).mockResolvedValue([
+      { gamePk: 200, gameDate: "2026-04-01", officialDatetime: null, homeTeam: "Home", awayTeam: "Away", homeTeamId: 1, awayTeamId: 2, venue: null, status: "Scheduled", season: 2026 },
+    ]);
+    vi.mocked(mlbApiClient.getSchedule).mockResolvedValue([
+      {
+        gamePk: 200, officialDate: "2026-04-01", gameDateTime: null, homeTeam: "Home", awayTeam: "Away", homeTeamId: 1, awayTeamId: 2,
+        venue: null, status: "Scheduled", season: 2026,
+        homeProbablePitcher: { id: 11, fullName: "Home Starter" },
+        awayProbablePitcher: { id: 22, fullName: "Away Starter" },
+      },
+    ]);
+    vi.mocked(pitcherStatsProvider)
+      .mockResolvedValueOnce({ pitcherId: 11, pitcherName: "Home Starter", era: 3.85 })
+      .mockResolvedValueOnce({ pitcherId: 22, pitcherName: "Away Starter", era: 4.12 });
+    vi.mocked(teamStatsProvider).mockResolvedValue(new Map());
+
+    const enriched = await enrichDailyGames({ date: "2026-04-01" });
+
+    expect(enriched[0]?.homePitcherEra).toBe(3.85);
+    expect(enriched[0]?.awayPitcherEra).toBe(4.12);
+  });
+
+  it("keeps ERA null when probable pitchers are missing", async () => {
+    vi.mocked(scheduleProvider).mockResolvedValue([
+      { gamePk: 201, gameDate: "2026-04-01", officialDatetime: null, homeTeam: "Home", awayTeam: "Away", homeTeamId: 1, awayTeamId: 2, venue: null, status: "Scheduled", season: 2026 },
+    ]);
+    vi.mocked(mlbApiClient.getSchedule).mockResolvedValue([
+      {
+        gamePk: 201, officialDate: "2026-04-01", gameDateTime: null, homeTeam: "Home", awayTeam: "Away", homeTeamId: 1, awayTeamId: 2,
+        venue: null, status: "Scheduled", season: 2026, homeProbablePitcher: null, awayProbablePitcher: null,
+      },
+    ]);
+    vi.mocked(teamStatsProvider).mockResolvedValue(new Map());
+
+    const enriched = await enrichDailyGames({ date: "2026-04-01" });
+
+    expect(vi.mocked(pitcherStatsProvider)).not.toHaveBeenCalled();
+    expect(enriched[0]?.homePitcherEra).toBeNull();
+    expect(enriched[0]?.awayPitcherEra).toBeNull();
+  });
+
 });

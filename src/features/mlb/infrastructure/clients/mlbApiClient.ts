@@ -42,7 +42,7 @@ type MlbScheduleResponse = {
 };
 
 type MlbPitchingStat = {
-  era?: string;
+  era?: string | number;
 };
 
 type MlbPitcherStatsSplit = {
@@ -132,12 +132,12 @@ function normalizeProbablePitcher(pitcher: MlbApiProbablePitcher | undefined): M
   };
 }
 
-function parseEra(value: string | undefined): number | null {
-  if (!value) {
+function parseEra(value: string | number | undefined): number | null {
+  if (value === undefined || value === null || value === "") {
     return null;
   }
 
-  const parsed = Number.parseFloat(value);
+  const parsed = typeof value === "number" ? value : Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
