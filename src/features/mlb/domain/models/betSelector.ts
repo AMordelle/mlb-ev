@@ -19,33 +19,39 @@ export function selectBets(analysis: GameAnalysis[]): SelectedBet[] {
       return [];
     }
 
-    const requiredValues = [
-      game.lineTotal,
-      game.overOdds,
-      game.underOdds,
-      game.overProbability,
-      game.underProbability,
-      game.overEV,
-      game.underEV,
-    ];
+    const line = game.lineTotal;
+    const overOdds = game.overOdds;
+    const underOdds = game.underOdds;
+    const overProbability = game.overProbability;
+    const underProbability = game.underProbability;
+    const overEV = game.overEV;
+    const underEV = game.underEV;
 
-    if (requiredValues.some((value) => value === null)) {
+    if (
+      line === null ||
+      overOdds === null ||
+      underOdds === null ||
+      overProbability === null ||
+      underProbability === null ||
+      overEV === null ||
+      underEV === null
+    ) {
       return [];
     }
 
     const selectedSide =
-      game.overEV >= game.underEV
+      overEV >= underEV
         ? {
             betType: "OVER" as const,
-            odds: game.overOdds,
-            probability: game.overProbability,
-            ev: game.overEV,
+            odds: overOdds,
+            probability: overProbability,
+            ev: overEV,
           }
         : {
             betType: "UNDER" as const,
-            odds: game.underOdds,
-            probability: game.underProbability,
-            ev: game.underEV,
+            odds: underOdds,
+            probability: underProbability,
+            ev: underEV,
           };
 
     if (selectedSide.ev < MIN_EV || selectedSide.probability < MIN_PROBABILITY) {
@@ -56,7 +62,7 @@ export function selectBets(analysis: GameAnalysis[]): SelectedBet[] {
       {
         gamePk: game.gamePk,
         betType: selectedSide.betType,
-        line: game.lineTotal,
+        line: line,
         odds: selectedSide.odds,
         probability: selectedSide.probability,
         ev: selectedSide.ev,
