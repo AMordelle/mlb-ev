@@ -5,6 +5,7 @@ import { gamesRepository } from "@/features/mlb/infrastructure/repositories/game
 import { scheduleProvider } from "@/features/mlb/infrastructure/providers/scheduleProvider";
 import { getOddsForGames } from "@/features/mlb/infrastructure/providers/oddsProvider";
 import { buildGameAnalysis } from "@/features/mlb/application/services/gameAnalysisService";
+import { selectBets } from "@/features/mlb/domain/models/betSelector";
 import { todayISO } from "@/lib/utils/dates";
 
 type RefreshGamesBody = {
@@ -39,6 +40,7 @@ export async function POST(request: Request) {
       runProjections,
       odds,
     });
+    const selectedBets = selectBets(analysis);
 
     return NextResponse.json({
       ok: true,
@@ -49,6 +51,7 @@ export async function POST(request: Request) {
       runProjections,
       odds: Object.fromEntries(odds),
       analysis,
+      selectedBets,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
