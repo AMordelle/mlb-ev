@@ -5,6 +5,8 @@ import { gamesRepository } from "@/features/mlb/infrastructure/repositories/game
 import { scheduleProvider } from "@/features/mlb/infrastructure/providers/scheduleProvider";
 import { getOddsForGames } from "@/features/mlb/infrastructure/providers/oddsProvider";
 import { buildGameAnalysis } from "@/features/mlb/application/services/gameAnalysisService";
+import { selectBets } from "@/features/mlb/domain/models/betSelector";
+import { buildRefreshGamesPayload } from "./response";
 import { todayISO } from "@/lib/utils/dates";
 
 type RefreshGamesBody = {
@@ -39,17 +41,19 @@ export async function POST(request: Request) {
       runProjections,
       odds,
     });
+    const selectedBets = selectBets(analysis);
 
-    return NextResponse.json({
-      ok: true,
-      date,
-      count: games.length,
-      games,
-      enrichedGames,
-      runProjections,
-      odds: Object.fromEntries(odds),
-      analysis,
-    });
+    return NextResponse.json(
+      buildRefreshGamesPayload({
+        date,
+        games,
+        enrichedGames,
+        runProjections,
+        odds,
+        analysis,
+        selectedBets,
+      }),
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(

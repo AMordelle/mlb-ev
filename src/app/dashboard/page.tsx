@@ -15,6 +15,7 @@ import type {
   GameAnalysisInput,
   GameRecord,
 } from "@/features/mlb/application/dto/types";
+import type { SelectedBet } from "@/features/mlb/domain/models/betSelector";
 import { buildDataReadinessSummary } from "@/features/mlb/application/services/dataReadinessService";
 import { analyzeTodayGames } from "@/features/mlb/application/use-cases/analyzeTodayGames";
 import { todayISO } from "@/lib/utils/dates";
@@ -42,6 +43,7 @@ type RefreshGamesSuccess = {
   runProjections: EnrichedGameRunProjection[];
   odds: Record<string, GameOdds>;
   analysis: GameAnalysis[];
+  selectedBets: SelectedBet[];
 };
 
 type RefreshGamesError = {
@@ -474,6 +476,40 @@ export default function DashboardPage() {
                         <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatEvValue(item.underEV)}</td>
                         <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{item.valid ? "Yes" : "No"}</td>
                         <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{item.reason}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <h3 style={{ marginTop: "1rem" }}>Selected Bets (EV+)</h3>
+            {!refreshResult.selectedBets || refreshResult.selectedBets.length === 0 ? (
+              <p>No bets selected</p>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>gamePk</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>betType</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>line</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>odds</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>probability</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>ev</th>
+                      <th style={{ textAlign: "left", borderBottom: "1px solid #d1d5db", padding: "0.5rem" }}>reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {refreshResult.selectedBets.map((bet) => (
+                      <tr key={`${bet.gamePk}-${bet.betType}-${bet.line}`}>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{bet.gamePk}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{bet.betType}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatNullableValue(bet.line)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatNullableValue(bet.odds)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatProbabilityValue(bet.probability)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{formatEvValue(bet.ev)}</td>
+                        <td style={{ borderBottom: "1px solid #e5e7eb", padding: "0.5rem" }}>{bet.reason ?? "-"}</td>
                       </tr>
                     ))}
                   </tbody>
