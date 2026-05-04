@@ -3,6 +3,16 @@ import { describe, expect, it } from "vitest";
 import type { GameAnalysis } from "@/features/mlb/application/dto/types";
 import { buildRefreshGamesPayload } from "./response";
 
+type TestSelectedBet = {
+  gamePk: number;
+  betType: "OVER" | "UNDER";
+  line: number;
+  odds: number;
+  probability: number;
+  ev: number;
+  reason: string;
+};
+
 const BASE_GAME_ANALYSIS: Omit<
   GameAnalysis,
   "gamePk" | "lineTotal" | "overEV" | "underEV" | "overProbability" | "underProbability"
@@ -33,6 +43,18 @@ describe("buildRefreshGamesPayload", () => {
       },
     ];
 
+    const selectedBets: TestSelectedBet[] = [
+      {
+        gamePk: 10,
+        betType: "OVER",
+        line: 8.5,
+        odds: -110,
+        probability: 0.56,
+        ev: 0.04,
+        reason: "Selected because EV and probability pass thresholds.",
+      },
+    ];
+
     const payload = buildRefreshGamesPayload({
       date: "2026-05-01",
       games: [],
@@ -40,6 +62,7 @@ describe("buildRefreshGamesPayload", () => {
       runProjections: [],
       odds: new Map(),
       analysis,
+      selectedBets,
     });
 
     expect(Array.isArray(payload.selectedBets)).toBe(true);
@@ -66,6 +89,7 @@ describe("buildRefreshGamesPayload", () => {
       runProjections: [],
       odds: new Map(),
       analysis,
+      selectedBets: [],
     });
 
     expect(payload.selectedBets).toEqual([]);

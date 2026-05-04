@@ -5,6 +5,7 @@ import { gamesRepository } from "@/features/mlb/infrastructure/repositories/game
 import { scheduleProvider } from "@/features/mlb/infrastructure/providers/scheduleProvider";
 import { getOddsForGames } from "@/features/mlb/infrastructure/providers/oddsProvider";
 import { buildGameAnalysis } from "@/features/mlb/application/services/gameAnalysisService";
+import { selectBets } from "@/features/mlb/domain/models/betSelector";
 import { buildRefreshGamesPayload } from "./response";
 import { todayISO } from "@/lib/utils/dates";
 
@@ -40,6 +41,8 @@ export async function POST(request: Request) {
       runProjections,
       odds,
     });
+    const selectedBets = selectBets(analysis);
+
     return NextResponse.json(
       buildRefreshGamesPayload({
         date,
@@ -48,6 +51,7 @@ export async function POST(request: Request) {
         runProjections,
         odds,
         analysis,
+        selectedBets,
       }),
     );
   } catch (error) {

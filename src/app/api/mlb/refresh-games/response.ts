@@ -5,9 +5,8 @@ import type {
   GameOdds,
   GameRecord,
 } from "@/features/mlb/application/dto/types";
-import { selectBets, type SelectedBet } from "@/features/mlb/domain/models/betSelector";
 
-export type RefreshGamesPayload = {
+export type RefreshGamesPayload<TSelectedBet = unknown> = {
   ok: true;
   date: string;
   count: number;
@@ -16,18 +15,19 @@ export type RefreshGamesPayload = {
   runProjections: EnrichedGameRunProjection[];
   odds: Record<string, GameOdds>;
   analysis: GameAnalysis[];
-  selectedBets: SelectedBet[];
+  selectedBets: TSelectedBet[];
 };
 
-export function buildRefreshGamesPayload(params: {
+export function buildRefreshGamesPayload<TSelectedBet>(params: {
   date: string;
   games: GameRecord[];
   enrichedGames: EnrichedGame[];
   runProjections: EnrichedGameRunProjection[];
   odds: Map<number, GameOdds>;
   analysis: GameAnalysis[];
-}): RefreshGamesPayload {
-  const { date, games, enrichedGames, runProjections, odds, analysis } = params;
+  selectedBets: TSelectedBet[];
+}): RefreshGamesPayload<TSelectedBet> {
+  const { date, games, enrichedGames, runProjections, odds, analysis, selectedBets } = params;
 
   return {
     ok: true,
@@ -38,6 +38,6 @@ export function buildRefreshGamesPayload(params: {
     runProjections,
     odds: Object.fromEntries(odds),
     analysis,
-    selectedBets: selectBets(analysis),
+    selectedBets,
   };
 }
