@@ -94,7 +94,12 @@ function parseUpdateBetResultBody(value: unknown): UpdateBetResultBody | null {
 }
 
 export async function GET() {
-  return NextResponse.json({ ok: true, bets: getAllBets() });
+  try {
+    return NextResponse.json({ ok: true, bets: await getAllBets() });
+  } catch (error) {
+    console.error("Failed to load bets", error);
+    return NextResponse.json({ ok: false, error: "Failed to load bets" }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -110,7 +115,12 @@ export async function POST(request: NextRequest) {
     result: "PENDING",
   };
 
-  return NextResponse.json({ ok: true, bet: saveBet(bet) });
+  try {
+    return NextResponse.json({ ok: true, bet: await saveBet(bet) });
+  } catch (error) {
+    console.error("Failed to save bet", error);
+    return NextResponse.json({ ok: false, error: "Failed to save bet" }, { status: 500 });
+  }
 }
 
 export async function PATCH(request: NextRequest) {
@@ -120,11 +130,16 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "Invalid bet result payload" }, { status: 400 });
   }
 
-  const bet = updateBetResult(body);
+  try {
+    const bet = await updateBetResult(body);
 
-  if (!bet) {
-    return NextResponse.json({ ok: false, error: "Bet not found" }, { status: 404 });
+    if (!bet) {
+      return NextResponse.json({ ok: false, error: "Bet not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ ok: true, bet });
+  } catch (error) {
+    console.error("Failed to update bet", error);
+    return NextResponse.json({ ok: false, error: "Failed to update bet" }, { status: 500 });
   }
-
-  return NextResponse.json({ ok: true, bet });
 }
