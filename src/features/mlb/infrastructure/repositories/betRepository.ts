@@ -1,7 +1,7 @@
 import type { PostgrestError } from "@supabase/supabase-js";
 
 import type { BetRecord, BetResultStatus } from "@/features/mlb/domain/models/betRecord";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseServiceRoleClient } from "@/lib/supabase/service";
 
 export type BetRow = {
   id: string;
@@ -86,7 +86,7 @@ export function mapBetRecordToWriteRow(record: BetRecord): BetWriteRow {
 }
 
 export async function saveBet(record: BetRecord): Promise<BetRecord> {
-  const supabase = await getSupabaseServerClient();
+  const supabase = getSupabaseServiceRoleClient();
   const existingBetResponse = await supabase.from("bets").select("*").eq("id", record.id).maybeSingle();
 
   if (existingBetResponse.error) throwSupabaseError("saveBet.findExisting", existingBetResponse.error);
@@ -101,7 +101,7 @@ export async function saveBet(record: BetRecord): Promise<BetRecord> {
 }
 
 export async function getAllBets(): Promise<BetRecord[]> {
-  const supabase = await getSupabaseServerClient();
+  const supabase = getSupabaseServiceRoleClient();
   const { data, error } = await supabase.from("bets").select("*").order("created_at", { ascending: true });
 
   if (error) throwSupabaseError("getAllBets", error);
@@ -110,7 +110,7 @@ export async function getAllBets(): Promise<BetRecord[]> {
 }
 
 export async function updateBetResult(params: { id: string; result: BetResultStatus; bankrollAfter?: number }): Promise<BetRecord | null> {
-  const supabase = await getSupabaseServerClient();
+  const supabase = getSupabaseServiceRoleClient();
   const payload: BetResultUpdateRow = {
     result: params.result,
     ...(params.bankrollAfter === undefined ? {} : { bankroll_after: params.bankrollAfter }),
@@ -129,7 +129,7 @@ export async function clearBetsForTests(): Promise<void> {
     throw new Error("clearBetsForTests can only be used in test environments");
   }
 
-  const supabase = await getSupabaseServerClient();
+  const supabase = getSupabaseServiceRoleClient();
   const { error } = await supabase.from("bets").delete().neq("id", "00000000-0000-0000-0000-000000000000");
 
   if (error) throwSupabaseError("clearBetsForTests", error);

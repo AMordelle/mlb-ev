@@ -2,12 +2,12 @@ import type { PostgrestError } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BetRecord } from "@/features/mlb/domain/models/betRecord";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseServiceRoleClient } from "@/lib/supabase/service";
 
 import { getAllBets, saveBet, updateBetResult, type BetRow } from "./betRepository";
 
-vi.mock("@/lib/supabase/server", () => ({
-  getSupabaseServerClient: vi.fn(),
+vi.mock("@/lib/supabase/service", () => ({
+  getSupabaseServiceRoleClient: vi.fn(),
 }));
 
 type SupabaseResponse<T> = {
@@ -65,6 +65,13 @@ const supabaseError = (message: string): PostgrestError => ({
   details: "",
   hint: "",
   code: "TEST_ERROR",
+  toJSON: () => ({
+    name: "PostgrestError",
+    message,
+    details: "",
+    hint: "",
+    code: "TEST_ERROR",
+  }),
 });
 
 function mockSupabaseClient(options: {
@@ -112,7 +119,7 @@ function mockSupabaseClient(options: {
     table,
   }));
 
-  vi.mocked(getSupabaseServerClient).mockResolvedValue({ from } as unknown as Awaited<ReturnType<typeof getSupabaseServerClient>>);
+  vi.mocked(getSupabaseServiceRoleClient).mockReturnValue({ from } as unknown as ReturnType<typeof getSupabaseServiceRoleClient>);
 
   return { from };
 }
