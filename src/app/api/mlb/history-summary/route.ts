@@ -4,5 +4,10 @@ import { buildHistorySummary } from "@/features/mlb/application/services/history
 import { getAllBets } from "@/features/mlb/infrastructure/repositories/betRepository";
 
 export async function GET() {
-  return NextResponse.json({ ok: true, summary: buildHistorySummary(getAllBets()) });
+  try {
+    return NextResponse.json({ ok: true, summary: buildHistorySummary(await getAllBets()) });
+  } catch (error) {
+    console.error("Failed to load history summary", error);
+    return NextResponse.json({ ok: false, error: "Failed to load history summary" }, { status: 500 });
+  }
 }
